@@ -1,17 +1,19 @@
 // ============================================================
-// ThemeToggle.tsx
-// A Sun / Moon button that toggles between light and dark mode.
-// The parent (App) owns the `isDark` state and passes it down.
+// ThemeToggle.tsx  — Sun / Moon theme switch button
+//
+// A simple controlled component:  App owns `isDark`, passes it
+// down, and this component just renders the correct icon and
+// fires `onToggle` when clicked.
 // ============================================================
 
-import React from "react";
+import type { FC } from "react";
 
 interface ThemeToggleProps {
   isDark: boolean;
   onToggle: () => void;
 }
 
-const ThemeToggle: React.FC<ThemeToggleProps> = ({ isDark, onToggle }) => {
+const ThemeToggle: FC<ThemeToggleProps> = ({ isDark, onToggle }) => {
   return (
     <button
       onClick={onToggle}

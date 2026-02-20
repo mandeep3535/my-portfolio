@@ -1,106 +1,92 @@
-﻿// ============================================================
-// MessageBubble.tsx
+// ============================================================
+// MessageBubble.tsx  — Renders a single chat message
 //
-// Receives `colClass` (the shared COL string from ChatWindow)
-// and applies it to BOTH user and assistant rows so all content
-// sits inside the same centred column.
+// Two visual styles:
+//   • USER bubble   — small green pill, right-aligned inside COL
+//   • ASSISTANT row — full-width tinted stripe with avatar + content
 //
-// User bubble:      right-aligned inside COL  (not the viewport)
-// Assistant bubble: left-aligned inside COL with tinted full-width stripe
+// Both styles sit inside the same centred column (`colClass`)
+// so they align perfectly with the input bar and typing indicator.
+//
+// The assistant variant also runs a "typewriter" streaming
+// animation: text appears character-by-character, finishing in
+// ~2.5 seconds regardless of content length.
 // ============================================================
 
-import React from "react";
+import { useState, useEffect } from "react";
+import type { FC } from "react";
 import type { ChatMessage } from "../utils/chatEngine";
+import { renderMarkdown } from "../utils/markdown";
+import { AVATAR_GRADIENT, AVATAR_INITIALS } from "./ChatWindow";
 import PromptChips from "./PromptChips";
+
+// ─── Props ────────────────────────────────────────────────────────────────────
 
 interface MessageBubbleProps {
   message: ChatMessage;
   isDark: boolean;
+  /** Fires when the user clicks a suggestion chip below the message. */
   onChipClick: (label: string) => void;
-  /** Shared centred-column Tailwind classes passed down from ChatWindow. */
+  /** Shared centred-column Tailwind classes from ChatWindow (e.g. COL). */
   colClass: string;
+  /** When true, the assistant content animates in character-by-character. */
+  isStreaming?: boolean;
+  /** Callback fired once the typewriter animation reaches the end. */
+  onStreamDone?: () => void;
 }
 
-// Mini Markdown renderer 
+// ─── Component ────────────────────────────────────────────────────────────────
 
-function renderMarkdown(text: string, isDark: boolean): React.ReactNode[] {
-  const lines = text.split("\n");
-  const elements: React.ReactNode[] = [];
-
-  lines.forEach((line, lineIdx) => {
-    if (line === "") {
-      elements.push(<br key={`br-${lineIdx}`} />);
-      return;
-    }
-
-    const headingMatch = line.match(/^\*\*(.+)\*\*$/);
-    if (headingMatch) {
-      elements.push(
-        <p key={lineIdx} className={`font-semibold mt-3 mb-1 ${isDark ? "text-white" : "text-gray-900"}`}>
-          {headingMatch[1]}
-        </p>
-      );
-      return;
-    }
-
-    const isBullet = line.startsWith("â€¢ ") || line.startsWith("- ");
-    if (isBullet) {
-      elements.push(
-        <div key={lineIdx} className="flex gap-2 my-0.5">
-          <span className="mt-0.5 shrink-0 text-emerald-500">â€¢</span>
-          <span>{parseInline(line.replace(/^[â€¢\-]\s*/, ""), isDark, lineIdx)}</span>
-        </div>
-      );
-    } else {
-      elements.push(<span key={lineIdx}>{parseInline(line, isDark, lineIdx)}</span>);
-    }
-  });
-
-  return elements;
-}
-
-function parseInline(text: string, isDark: boolean, lineKey: number): React.ReactNode[] {
-  const regex = /(\*\*(.+?)\*\*|\[(.+?)\]\((.+?)\)|_(.+?)_)/g;
-  const parts: React.ReactNode[] = [];
-  let lastIndex = 0;
-  let match: RegExpExecArray | null;
-  let i = 0;
-
-  while ((match = regex.exec(text)) !== null) {
-    if (match.index > lastIndex) {
-      parts.push(<React.Fragment key={`${lineKey}-t${i}`}>{text.slice(lastIndex, match.index)}</React.Fragment>);
-    }
-    if (match[0].startsWith("**")) {
-      parts.push(<strong key={`${lineKey}-b${i}`} className={isDark ? "text-white" : "text-gray-900"}>{match[2]}</strong>);
-    } else if (match[0].startsWith("[")) {
-      parts.push(
-        <a key={`${lineKey}-a${i}`} href={match[4]} target="_blank" rel="noopener noreferrer"
-          className="text-emerald-500 underline hover:text-emerald-400 transition-colors">
-          {match[3]}
-        </a>
-      );
-    } else if (match[0].startsWith("_")) {
-      parts.push(<em key={`${lineKey}-i${i}`} className="opacity-80">{match[5]}</em>);
-    }
-    lastIndex = match.index + match[0].length;
-    i++;
-  }
-
-  if (lastIndex < text.length) {
-    parts.push(<React.Fragment key={`${lineKey}-end`}>{text.slice(lastIndex)}</React.Fragment>);
-  }
-  return parts;
-}
-
-// Component 
-const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isDark, onChipClick, colClass }) => {
+const MessageBubble: FC<MessageBubbleProps> = ({
+  message, isDark, onChipClick, colClass, isStreaming = false, onStreamDone,
+}) => {
   const isUser = message.role === "user";
 
+  // ── Streaming typewriter state (assistant only) ──────────────────────
+  // `displayed` holds the portion of the message shown so far.
+  // When isStreaming = true we start at "" and grow character-by-character.
+  // When isStreaming = false (older messages) we show the full content.
+  const [displayed, setDisplayed] = useState(isStreaming ? "" : message.content);
+  const [streamDone, setStreamDone] = useState(!isStreaming);
+
+  useEffect(() => {
+    // For messages that aren't streaming, just show everything immediately.
+    if (!isStreaming) {
+      setDisplayed(message.content);
+      setStreamDone(true);
+      return;
+    }
+
+    // Begin the typewriter animation from scratch.
+    setDisplayed("");
+    setStreamDone(false);
+
+    const full = message.content;
+    // Pace: we want the animation to finish in roughly 2.5 seconds
+    // regardless of how long the reply is.
+    // 150 ticks × 16 ms/tick ≈ 2400 ms.  So charsPerTick = length / 150.
+    const charsPerTick = Math.max(1, Math.ceil(full.length / 150));
+    let pos = 0;
+
+    const id = setInterval(() => {
+      pos = Math.min(pos + charsPerTick, full.length);
+      setDisplayed(full.slice(0, pos));
+      if (pos >= full.length) {
+        clearInterval(id);
+        setStreamDone(true);
+        onStreamDone?.();      // tell ChatWindow the animation is done
+      }
+    }, 16);
+
+    return () => clearInterval(id);   // cleanup if component unmounts mid-animation
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isStreaming, message.id]);
+  // ────────────────────────────────────────────────────────────────────────
+
   if (isUser) {
-    //  User message 
-    // Outer row: full width so background covers edge-to-edge on scroll
-    // Inner container: same COL as everything else â†’ bubble aligns to
-    // the RIGHT edge of the column, never the screen edge.
+    // ── User message ───────────────────────────────────────────────────
+    // Green rounded pill, max 70% of the column width, pushed to the right.
+    // The outer `w-full` wrapper ensures the bg covers edge-to-edge.
     return (
       <div className="w-full py-2">
         <div className={colClass}>
@@ -120,20 +106,20 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isDark, onChipCl
     );
   }
 
-  // â”€â”€ Assistant message â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  // Full-width coloured stripe, content inside the same COL.
+  // ── Assistant message ─────────────────────────────────────────────────
+  // Full-width tinted stripe (dark or light) with the content inside COL.
   return (
     <div className={`w-full py-4 ${isDark ? "bg-[#444654]" : "bg-gray-50/80"}`}>
       <div className={colClass}>
         <div className="flex gap-3 items-start">
 
-          {/* Avatar */}
+          {/* Avatar — uses the shared gradient + initials from ChatWindow */}
           <div
             className="shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold"
-            style={{ background: "linear-gradient(135deg, #10a37f 0%, #1a7f64 100%)" }}
+            style={{ background: AVATAR_GRADIENT }}
             aria-label="Portfolio Assistant avatar"
           >
-            MS
+            {AVATAR_INITIALS}
           </div>
 
           {/* Content */}
@@ -141,11 +127,17 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isDark, onChipCl
             <p className={`text-xs font-semibold mb-1.5 ${isDark ? "text-gray-400" : "text-gray-500"}`}>
               Portfolio Assistant
             </p>
+            {/* Rendered Markdown content — converted by utils/markdown.tsx */}
             <div className={`text-sm leading-7 space-y-0.5 ${isDark ? "text-gray-200" : "text-gray-700"}`}>
-              {renderMarkdown(message.content, isDark)}
+              {renderMarkdown(displayed, isDark)}
+              {/* Blinking cursor that shows while text is still streaming */}
+              {!streamDone && (
+                <span className="inline-block w-[2px] h-[1em] ml-0.5 bg-current align-middle animate-pulse" />
+              )}
             </div>
 
-            {message.chips && message.chips.length > 0 && (
+            {/* Only show suggestion chips once streaming is done */}
+            {streamDone && message.chips && message.chips.length > 0 && (
               <PromptChips
                 chips={message.chips}
                 onChipClick={onChipClick}

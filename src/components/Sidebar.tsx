@@ -1,27 +1,35 @@
 // ============================================================
-// Sidebar.tsx
-// Left-side navigation panel — mirrors ChatGPT's sidebar style.
+// Sidebar.tsx  — Left navigation panel
 //
-// • "New Chat" button resets the conversation.
-// • Section links (About, Projects, Skills, etc.) fire a chip click.
-// • Collapsible on mobile (toggled by a hamburger button).
+// Mirrors the ChatGPT sidebar look:
+//   • "New Chat" button  →  resets the conversation
+//   • Section links      →  inject a query into ChatWindow
+//   • Slash command hint →  reminds users of /about, /skills, etc.
+//   • Mini profile card  →  name, email, theme toggle
+//
+// On mobile (<lg) this is a fixed drawer that slides in from
+// the left, with a dark backdrop behind it.
+// On desktop (lg+) it's a static column always visible.
 // ============================================================
 
-import React from "react";
+import type { FC } from "react";
 import resumeData from "../data/resumeData";
 import ThemeToggle from "./ThemeToggle";
+import { AVATAR_GRADIENT, AVATAR_INITIALS } from "./ChatWindow";
 
 interface SidebarProps {
   isDark: boolean;
   onToggleTheme: () => void;
+  /** Injects a query string into ChatWindow when a nav link is clicked. */
   onSectionClick: (query: string) => void;
   onNewChat: () => void;
-  /** Whether the sidebar is open on mobile. */
+  /** Whether the mobile drawer is open. Ignored on desktop (lg+). */
   isOpen: boolean;
   onClose: () => void;
 }
 
-// Navigation sections — each maps to a chat query string
+// Navigation sections — each maps to a chat query string.
+// When clicked, the query is sent to ChatWindow via pendingQuery.
 const NAV_SECTIONS = [
   { label: "About",      icon: "👤", query: "About Mandeep" },
   { label: "Projects",   icon: "🚀", query: "Show projects" },
@@ -31,7 +39,7 @@ const NAV_SECTIONS = [
   { label: "Contact",    icon: "📬", query: "Contact info" },
 ];
 
-const Sidebar: React.FC<SidebarProps> = ({
+const Sidebar: FC<SidebarProps> = ({
   isDark,
   onToggleTheme,
   onSectionClick,
@@ -41,8 +49,8 @@ const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const { name, contact } = resumeData;
 
-  // ── Shared classes ──────────────────────────────────────────────────────────
-  const sidebarBg  = isDark ? "bg-[#202123]"  : "bg-[#f7f7f8]";
+  // ── Derived colour classes ────────────────────────────────────────────────
+  const sidebarBg  = isDark ? "bg-[#0c0c0e]"  : "bg-[#f7f7f8]";
   const borderCol  = isDark ? "border-white/10" : "border-gray-200";
   const textMuted  = isDark ? "text-gray-400"   : "text-gray-500";
   const textMain   = isDark ? "text-gray-100"   : "text-gray-800";
@@ -135,13 +143,13 @@ const Sidebar: React.FC<SidebarProps> = ({
         {/* ── Bottom: profile + theme toggle ───────────────────────────────── */}
         <div className={`p-3 border-t ${borderCol}`}>
           <div className="flex items-center justify-between">
-            {/* Mini profile */}
+            {/* Mini profile avatar — re-uses the same gradient as assistant messages */}
             <div className="flex items-center gap-2 min-w-0">
               <div
                 className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0"
-                style={{ background: "linear-gradient(135deg, #10a37f 0%, #1a7f64 100%)" }}
+                style={{ background: AVATAR_GRADIENT }}
               >
-                MS
+                {AVATAR_INITIALS}
               </div>
               <div className="min-w-0">
                 <p className={`text-sm font-medium truncate ${textMain}`}>{name}</p>

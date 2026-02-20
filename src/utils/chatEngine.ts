@@ -1,49 +1,72 @@
 // ============================================================
 // chatEngine.ts
-// Rule-based intent matcher + response generator.
-// Processes user input and returns structured bot responses
-// derived exclusively from resumeData.
+//
+// The "brain" behind the portfolio chatbot.
+//
+// HOW IT WORKS:
+// 1. User types a message (or clicks a chip / sidebar link).
+// 2. `processMessage(input)` is called with the raw text.
+// 3. If the text starts with "/" we treat it as a slash command
+//    (/about, /projects, /skills, etc.).
+// 4. Otherwise we run through a list of keyword rules — the
+//    first rule whose keywords appear in the input wins.
+// 5. The matching handler pulls data from resumeData.ts and
+//    returns a bot reply with Markdown content + suggestion chips.
+// 6. If nothing matches, a friendly fallback is returned.
+//
+// IMPORTANT: This is a RULE-BASED engine, not AI.  Every
+// response is deterministic, derived entirely from resumeData.
 // ============================================================
 
 import resumeData from "../data/resumeData";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-/** A single chat message in the conversation. */
+/** Shape of every message displayed in the chat window. */
 export interface ChatMessage {
-  id: string;
-  role: "user" | "assistant";
-  content: string;
-  /** Optional quick-reply chip labels shown below the message. */
-  chips?: string[];
+  id: string;                   // unique random identifier
+  role: "user" | "assistant";   // who sent it
+  content: string;              // plain text with lightweight Markdown
+  chips?: string[];             // optional follow-up suggestion labels
   timestamp: Date;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+// Small pure functions used by the response builders below.
 
-/** Generate a unique message ID. */
+/** Generate a short random ID for a message (e.g. "k7f3n2xp"). */
 function uid(): string {
   return Math.random().toString(36).slice(2, 10);
 }
 
-/** Build an assistant message object. */
+/** Convenience factory: builds a complete assistant ChatMessage object. */
 function botMsg(content: string, chips?: string[]): ChatMessage {
   return { id: uid(), role: "assistant", content, chips, timestamp: new Date() };
 }
 
-/** Lowercase + strip punctuation for fuzzy matching. */
+/**
+ * Normalise user input for fuzzy keyword matching.
+ * Lowercases everything and strips punctuation so that
+ * "What's your stack?" becomes "whats your stack".
+ */
 function normalize(text: string): string {
   return text.toLowerCase().replace(/[^a-z0-9\s]/g, "");
 }
 
-/** Check if the normalised input contains any of the given keywords. */
+/**
+ * Returns true if the normalised input contains ANY of the keywords.
+ * Used by every intent rule to decide if it should handle the message.
+ */
 function contains(input: string, keywords: string[]): boolean {
   const n = normalize(input);
   return keywords.some((kw) => n.includes(kw));
 }
 
 // ─── Response builders ────────────────────────────────────────────────────────
+// Each `build*()` function composes a Markdown string from resumeData fields.
+// The Markdown is later rendered into React elements by utils/markdown.tsx.
 
+/** Composes the "About Me" response with bio, links and awards. */
 function buildAbout(): string {
   const { about, contact, awards } = resumeData;
   return (
@@ -56,6 +79,7 @@ function buildAbout(): string {
   );
 }
 
+/** Lists all skills grouped into back-end, front-end, and tools. */
 function buildSkills(): string {
   const { backend, frontend, tools } = resumeData.skills;
   return (
@@ -66,6 +90,7 @@ function buildSkills(): string {
   );
 }
 
+/** Formats every project with tech stack, bullets, and links. */
 function buildProjects(): string {
   const lines: string[] = ["**Projects**\n"];
   resumeData.projects.forEach((p, i) => {
@@ -80,6 +105,7 @@ function buildProjects(): string {
   return lines.join("\n\n");
 }
 
+/** Builds the work experience timeline (role, company, bullets). */
 function buildExperience(): string {
   const lines: string[] = ["**Work Experience**\n"];
   resumeData.experience.forEach((e) => {
@@ -92,6 +118,7 @@ function buildExperience(): string {
   return lines.join("\n\n");
 }
 
+/** Formats education entries plus relevant coursework grades. */
 function buildEducation(): string {
   const lines: string[] = ["**Education**\n"];
   resumeData.education.forEach((ed) => {
@@ -106,6 +133,7 @@ function buildEducation(): string {
   return lines.join("\n\n");
 }
 
+/** Renders all contact channels as clickable Markdown links. */
 function buildContact(): string {
   const { contact } = resumeData;
   return (
@@ -120,23 +148,9 @@ function buildContact(): string {
   );
 }
 
-function buildWelcome(): ChatMessage {
-  return botMsg(
-    `Hi there! 👋 I'm **${resumeData.name}**'s Portfolio Assistant.\n\n` +
-      `I can tell you all about ${resumeData.name}'s background, projects, skills, and more.\n\n` +
-      `Here are a few things you can ask me:`,
-    [
-      "About Mandeep",
-      "Show projects",
-      "What's your stack?",
-      "Work experience",
-      "Education",
-      "Contact info",
-    ]
-  );
-}
-
 // ─── Intent map ───────────────────────────────────────────────────────────────
+// Each rule has a list of keywords and a handler that returns a ChatMessage.
+// The FIRST rule whose keywords match the user input wins — order matters.
 
 interface IntentRule {
   keywords: string[];
@@ -203,9 +217,12 @@ const intentRules: IntentRule[] = [
   },
 ];
 
-// ─── Command mode ─────────────────────────────────────────────────────────────
+// ─── Slash-command mode ──────────────────────────────────────────────────────
+// When the user types a "/" prefix the engine skips keyword matching and
+// jumps straight to the matching command.  This mirrors the UX of Discord
+// or Slack slash commands.
 
-/** Handle slash commands like /about, /projects, /skills, etc. */
+/** Map a slash command string to its response (or null if unknown). */
 function handleCommand(input: string): ChatMessage | null {
   const cmd = input.trim().toLowerCase();
   const commandMap: Record<string, () => ChatMessage> = {
@@ -235,8 +252,12 @@ function handleCommand(input: string): ChatMessage | null {
 // ─── Main entry point ─────────────────────────────────────────────────────────
 
 /**
- * Process a user message and return the assistant's response.
- * Call this whenever the user submits a new message.
+ * The ONLY function ChatWindow calls.
+ *
+ * Flow:
+ *   1. Try slash command  → return immediately if matched.
+ *   2. Try keyword rules  → first match wins.
+ *   3. Fallback           → polite "I don't have that" reply.
  */
 export function processMessage(input: string): ChatMessage {
   const trimmed = input.trim();
@@ -264,17 +285,6 @@ export function processMessage(input: string): ChatMessage {
   );
 }
 
-/** Returns the welcome message shown on first load. */
-export function getWelcomeMessage(): ChatMessage {
-  return buildWelcome();
-}
-
-/** Returns a list of suggestion chips for the initial empty state. */
-export const defaultChips = [
-  "About Mandeep",
-  "Show projects",
-  "What's your stack?",
-  "Work experience",
-  "Education",
-  "Contact info",
-];
+// NOTE: `getWelcomeMessage()` and `defaultChips` were previously exported
+// here but were never imported anywhere.  ProfileHero now acts as the
+// welcome screen, so these have been removed to keep the module clean.

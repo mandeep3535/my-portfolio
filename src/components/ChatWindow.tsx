@@ -1,56 +1,101 @@
-﻿// ============================================================
-// ChatWindow.tsx
-// The main chat area.
+// ============================================================
+// ChatWindow.tsx  — The main chat conversation panel
+//
+// This component is the centrepiece of the portfolio.
+// It shows either:
+//   • The ProfileHero welcome card (when there are 0 messages), OR
+//   • A scrollable list of MessageBubble components.
 //
 // Layout strategy
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// Every visible row â€” welcome hero, messages, typing indicator,
-// AND the input bar â€” shares one centred column:
+// ---------------
+// Every visible row — hero, messages, typing indicator, AND the
+// input bar — shares one centred-column class:
 //
 //   COL = "max-w-[780px] mx-auto w-full px-4 sm:px-6"
 //
-// This guarantees user bubbles align to the right edge of that
-// column (not the screen edge), and the input box sits directly
-// below the last message with identical horizontal margins.
+// This keeps user bubbles, assistant text, and the input box
+// perfectly aligned horizontally regardless of screen width.
+//
+// The two thin dark strips at the very top and bottom of this
+// panel are "cinematic letterbox" borders — purely decorative.
 // ============================================================
 
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
+import type { FC, KeyboardEvent, ChangeEvent } from "react";
 import type { ChatMessage } from "../utils/chatEngine";
-import { processMessage, getWelcomeMessage, defaultChips } from "../utils/chatEngine";
+import { processMessage } from "../utils/chatEngine";
 import MessageBubble from "./MessageBubble";
 import PromptChips from "./PromptChips";
+import ProfileHero from "./ProfileHero";
 import resumeData from "../data/resumeData";
+
+// ─── Shared constants ─────────────────────────────────────────────────────────
+
+// The avatar shown next to every assistant message + the typing dots.
+// Defined once here so we don't repeat the same gradient + initials
+// in multiple places.
+export const AVATAR_GRADIENT = "linear-gradient(135deg, #10a37f 0%, #1a7f64 100%)";
+export const AVATAR_INITIALS = "MS";
+
+// Curated badge list shown on the ProfileHero welcome card.
+// Picked from the most recognisable skills in resumeData.
+const HERO_BADGES = [
+  "React", "TypeScript", "Java", "Spring Boot",
+  "MySQL", "Docker", "Tailwind CSS", "REST APIs",
+];
+
+// ─── Props ────────────────────────────────────────────────────────────────────
 
 interface ChatWindowProps {
   isDark: boolean;
+  /** Query string injected by the Sidebar — `null` when idle. */
   pendingQuery: string | null;
+  /** Callback that tells App.tsx "I consumed the pending query, clear it." */
   onPendingQueryConsumed: () => void;
+  /** Incremented by the "New Chat" button to reset conversation. */
   clearSignal: number;
 }
 
+// How long (ms) the "typing" dots animate before the bot reply appears.
 const TYPING_DELAY_MS = 750;
 
-// Shared column class â€” used by EVERY row including the input bar.
-// Change this one constant to adjust the max reading width globally.
+// Shared centred-column class — every row uses this so the reading
+// width stays consistent.  Change this ONE constant to adjust globally.
 const COL = "max-w-[780px] mx-auto w-full px-4 sm:px-6";
 
-const ChatWindow: React.FC<ChatWindowProps> = ({
+// ─── Component ────────────────────────────────────────────────────────────────
+
+const ChatWindow: FC<ChatWindowProps> = ({
   isDark,
   pendingQuery,
   onPendingQueryConsumed,
   clearSignal,
 }) => {
+  // ── Chat state ──────────────────────────────────────────────────────────
+  // Start empty — the ProfileHero card acts as the welcome screen.
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState("");
-  const [isTyping, setIsTyping] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);  // true while "bot is typing" dots show
+  // ID of the assistant message currently doing the typewriter animation.
+  // null = no animation in progress.
+  const [streamingId, setStreamingId] = useState<string | null>(null);
 
-  const bottomRef = useRef<HTMLDivElement>(null);
+  // ── Refs ────────────────────────────────────────────────────────────
+  const bottomRef = useRef<HTMLDivElement>(null);  // invisible div at the bottom of the scroll area
   const inputRef  = useRef<HTMLTextAreaElement>(null);
 
+  /** Smoothly scroll the message list so the newest message is visible. */
   const scrollToBottom = useCallback(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, []);
 
+  /**
+   * Send a message as the user.
+   * 1. Creates a user ChatMessage and appends it.
+   * 2. Shows the typing indicator for TYPING_DELAY_MS.
+   * 3. Calls processMessage() from chatEngine to get the bot reply.
+   * 4. Appends the reply and starts the typewriter animation.
+   */
   const sendMessage = useCallback(
     (text: string) => {
       const trimmed = text.trim();
@@ -70,22 +115,28 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
         const reply = processMessage(trimmed);
         setMessages((prev) => [...prev, reply]);
         setIsTyping(false);
+        setStreamingId(reply.id); // begin typewriter animation
       }, TYPING_DELAY_MS);
     },
     [isTyping]
   );
 
+  // Auto-scroll whenever a new message arrives or typing starts.
   useEffect(() => { scrollToBottom(); }, [messages, isTyping, scrollToBottom]);
-  useEffect(() => { setMessages([getWelcomeMessage()]); }, []);
 
+  // "New Chat" effect — when clearSignal increments, wipe everything.
+  // ProfileHero re-appears because messages becomes [].
   useEffect(() => {
     if (clearSignal > 0) {
-      setMessages([getWelcomeMessage()]);
+      setMessages([]);
       setInputValue("");
+      setStreamingId(null);
       inputRef.current?.focus();
     }
   }, [clearSignal]);
 
+  // Sidebar bridge — when a sidebar link sets `pendingQuery`, treat
+  // it exactly like the user typed that text and pressed Enter.
   useEffect(() => {
     if (pendingQuery) {
       sendMessage(pendingQuery);
@@ -93,20 +144,23 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     }
   }, [pendingQuery, sendMessage, onPendingQueryConsumed]);
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+  /** Enter = send, Shift+Enter = newline (standard chat UX). */
+  const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       sendMessage(inputValue);
     }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+  /** Auto-resize the textarea as the user types (up to 140 px tall). */
+  const handleInputChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
     setInputValue(e.target.value);
     const el = e.target;
     el.style.height = "auto";
     el.style.height = Math.min(el.scrollHeight, 140) + "px";
   };
 
+  // ── Derived colour classes ────────────────────────────────────────
   const chatBg    = isDark ? "bg-[#343541]"    : "bg-white";
   const inputBg   = isDark ? "bg-[#40414f]"    : "bg-gray-100";
   const inputText = isDark ? "text-gray-100"   : "text-gray-900";
@@ -115,38 +169,41 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
 
   const hasMessages = messages.length > 0;
 
+  // Cinematic letterbox strip — a thin dark bar at the top and bottom
+  // of this panel.  Purely decorative — makes the chat feel "premium".
+  const filmStrip = isDark
+    ? "bg-black/55 backdrop-blur-sm"
+    : "bg-black/25 backdrop-blur-sm";
+
   return (
     <div className={`flex flex-col flex-1 w-full overflow-hidden ${chatBg}`}>
 
-      {/* â”€â”€ Scrollable message list â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* TOP cinematic strip -- full panel width, letterbox frame */}
+      <div className={`shrink-0 w-full h-[14px] ${filmStrip}`} aria-hidden="true" />
+
+      {/* Scrollable message list */}
       <div className="flex-1 overflow-y-auto" aria-live="polite" aria-label="Chat conversation">
 
-        {/* â”€â”€ Welcome hero (empty state) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+        {/* Welcome hero (empty state) */}
+        {/* ProfileHero - visible when the conversation is empty.
+             Sits at the TOP of the scroll area (no justify-center / min-h-full).
+             ProfileHero itself handles its own horizontal centering. */}
         {!hasMessages && (
-          <div className="flex flex-col items-center justify-center min-h-full py-16 text-center">
-            {/* Reuse COL for horizontal padding so hero aligns with messages */}
-            <div className={COL}>
-              <div
-                className="w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center text-white text-xl sm:text-2xl font-bold mb-5 mx-auto"
-                style={{ background: "linear-gradient(135deg, #10a37f 0%, #1a7f64 100%)" }}
-              >
-                MS
-              </div>
-              <h1 className={`text-xl sm:text-2xl font-semibold mb-1.5 ${isDark ? "text-white" : "text-gray-900"}`}>
-                {resumeData.name}
-              </h1>
-              <p className={`text-sm sm:text-base mb-6 ${textMuted}`}>{resumeData.title}</p>
-              <PromptChips
-                chips={defaultChips}
-                onChipClick={sendMessage}
-                isDark={isDark}
-                className="justify-center"
-              />
-            </div>
+          <div className="w-full pt-5 pb-4">
+          {/* TODO: swap avatarUrl to a real hosted photo once available */}
+            <ProfileHero
+              name={resumeData.name}
+              title={resumeData.title}
+              avatarUrl=""
+              location="Kelowna, BC  Open to remote"
+              badges={HERO_BADGES}
+              onSend={sendMessage}
+              isDark={isDark}
+            />
           </div>
         )}
 
-        {/* â”€â”€ Message rows â€” each row renders inside COL via MessageBubble */}
+        {/* Message rows - each row renders inside COL via MessageBubble */}
         {messages.map((msg) => (
           <MessageBubble
             key={msg.id}
@@ -154,20 +211,22 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
             isDark={isDark}
             onChipClick={sendMessage}
             colClass={COL}
+            isStreaming={msg.id === streamingId}
+            onStreamDone={() => setStreamingId(null)}
           />
         ))}
 
-        {/* â”€â”€ Typing indicator â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+        {/* Typing indicator — three bouncing dots with the bot avatar */}
         {isTyping && (
-          // Full-width tinted stripe, content constrained to COL
           <div className={`w-full py-4 ${isDark ? "bg-[#444654]" : "bg-gray-50/80"}`}>
             <div className={COL}>
               <div className="flex gap-3 items-start">
+                {/* Re-uses the same avatar style as assistant messages */}
                 <div
                   className="shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold"
-                  style={{ background: "linear-gradient(135deg, #10a37f 0%, #1a7f64 100%)" }}
+                  style={{ background: AVATAR_GRADIENT }}
                 >
-                  MS
+                  {AVATAR_INITIALS}
                 </div>
                 <div className="flex items-center gap-1 pt-2.5" aria-label="Typing indicator">
                   <span className="w-2 h-2 rounded-full bg-gray-400 animate-bounce [animation-delay:0ms]" />
@@ -182,13 +241,13 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
         <div ref={bottomRef} />
       </div>
 
-      {/* â”€â”€ Input bar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+      {/* Input bar
            Uses the identical COL container so the text box sits
            flush below the last message, not wider or narrower.    */}
       <div className={`shrink-0 border-t ${borderCol} py-3 pb-safe`}>
         <div className={COL}>
 
-          {/* Chip strip â€” scrolls horizontally on mobile */}
+          {/* Chip strip - scrolls horizontally on mobile */}
           {hasMessages && !isTyping && (
             <PromptChips
               chips={["About Mandeep", "Show projects", "View skills", "Contact"]}
@@ -213,7 +272,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
               value={inputValue}
               onChange={handleInputChange}
               onKeyDown={handleKeyDown}
-              placeholder='Messageâ€¦ or try "/help"'
+              placeholder='Message... or try "/help"'
               rows={1}
               aria-label="Message input"
               disabled={isTyping}
@@ -248,9 +307,12 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
           </p>
         </div>
       </div>
+
+      {/* BOTTOM cinematic strip - mirrors the top strip, completes the letterbox frame.
+           Sits below the input bar, at the very bottom of the middle panel.  */}
+      <div className={`shrink-0 w-full h-[14px] ${filmStrip}`} aria-hidden="true" />
     </div>
   );
 };
 
 export default ChatWindow;
-

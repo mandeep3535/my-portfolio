@@ -1,10 +1,14 @@
 // ============================================================
-// PromptChips.tsx
-// Renders a row of clickable suggestion chips.
-// Used both in the empty-state hero and under assistant messages.
+// PromptChips.tsx  — Reusable row of clickable suggestion chips
+//
+// Used in two places:
+//   1) Below the input bar (scrollable horizontal rail)
+//   2) Below each assistant message (wrapping row)
+//
+// The `scrollable` prop toggles between the two layouts.
 // ============================================================
 
-import React from "react";
+import type { FC } from "react";
 
 interface PromptChipsProps {
   chips: string[];
@@ -20,7 +24,7 @@ interface PromptChipsProps {
   scrollable?: boolean;
 }
 
-const PromptChips: React.FC<PromptChipsProps> = ({
+const PromptChips: FC<PromptChipsProps> = ({
   chips,
   onChipClick,
   isDark,
