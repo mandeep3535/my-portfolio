@@ -28,6 +28,7 @@ import MessageBubble from "./MessageBubble";
 import PromptChips from "./PromptChips";
 import ProfileHero from "./ProfileHero";
 import resumeData from "../data/resumeData";
+import avatarImg from "../assets/profile_image.png";
 
 // ─── Shared constants ─────────────────────────────────────────────────────────
 
@@ -169,37 +170,33 @@ const ChatWindow: FC<ChatWindowProps> = ({
 
   const hasMessages = messages.length > 0;
 
-  // Cinematic letterbox strip — a thin dark bar at the top and bottom
-  // of this panel.  Purely decorative — makes the chat feel "premium".
-  const filmStrip = isDark
-    ? "bg-black/55 backdrop-blur-sm"
-    : "bg-black/25 backdrop-blur-sm";
-
   return (
     <div className={`flex flex-col flex-1 w-full overflow-hidden ${chatBg}`}>
 
-      {/* TOP cinematic strip -- full panel width, letterbox frame */}
-      <div className={`shrink-0 w-full h-[14px] ${filmStrip}`} aria-hidden="true" />
+      {/* ── Dashboard header — always visible, edge-to-edge ──────────── */}
+      {/* TODO: swap avatarUrl to a real hosted photo once available     */}
+      <ProfileHero
+        name={resumeData.name}
+        title={resumeData.title}
+        avatarUrl={avatarImg}
+        location="Kelowna, BC · Open to remote"
+        badges={HERO_BADGES}
+        onSend={sendMessage}
+        isDark={isDark}
+      />
 
       {/* Scrollable message list */}
       <div className="flex-1 overflow-y-auto" aria-live="polite" aria-label="Chat conversation">
 
-        {/* Welcome hero (empty state) */}
-        {/* ProfileHero - visible when the conversation is empty.
-             Sits at the TOP of the scroll area (no justify-center / min-h-full).
-             ProfileHero itself handles its own horizontal centering. */}
+        {/* Empty state — shown when there are no messages yet */}
         {!hasMessages && (
-          <div className="w-full pt-5 pb-4">
-          {/* TODO: swap avatarUrl to a real hosted photo once available */}
-            <ProfileHero
-              name={resumeData.name}
-              title={resumeData.title}
-              avatarUrl=""
-              location="Kelowna, BC  Open to remote"
-              badges={HERO_BADGES}
-              onSend={sendMessage}
-              isDark={isDark}
-            />
+          <div className="flex flex-col items-center justify-center h-full gap-3 px-6 pb-16 select-none">
+            <div className={`text-[13px] font-medium ${isDark ? "text-gray-500" : "text-gray-400"}`}>
+              Ask me anything about Mandeep
+            </div>
+            <div className={`text-[11px] ${isDark ? "text-gray-600" : "text-gray-300"}`}>
+              projects · skills · experience · contact
+            </div>
           </div>
         )}
 
@@ -308,9 +305,6 @@ const ChatWindow: FC<ChatWindowProps> = ({
         </div>
       </div>
 
-      {/* BOTTOM cinematic strip - mirrors the top strip, completes the letterbox frame.
-           Sits below the input bar, at the very bottom of the middle panel.  */}
-      <div className={`shrink-0 w-full h-[14px] ${filmStrip}`} aria-hidden="true" />
     </div>
   );
 };

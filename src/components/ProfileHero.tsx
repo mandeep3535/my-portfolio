@@ -1,253 +1,314 @@
 // ============================================================
-// ProfileHero.tsx  — LinkedIn-style welcome hero card
+// ProfileHero.tsx  — Full-width SaaS dashboard header
 //
-// Shown at the TOP of the ChatWindow when the conversation
-// is empty (no messages yet).  Once the user sends a message,
-// ChatWindow hides this card and shows the message list instead.
+// Redesigned as a Linear/Vercel/Raycast-inspired header bar.
+// No floating card — edge-to-edge glassmorphism panel always
+// pinned to the top of the chat column.
 //
-// Visual structure (top → bottom inside the card)
-// ------------------------------------------------
-//   Gradient cover banner  (~140 px)
-//   Avatar (overlaps the banner via negative margin)
-//   Name · Title · Location
-//   Tech badges (up to 8 pills)
-//   ───── divider ─────
-//   CTA chips ("Show Projects", "View Skills", "Contact")
+// Visual structure (left → right inside the bar)
+// ─────────────────────────────────────────────────────────
+//  [3 px gradient accent strip — purple → blue]
+//  [Avatar] [Name / Title / Location] [Tech badges] [CTA btns]
+// ─────────────────────────────────────────────────────────
 //
-// Card width: ~90% of the middle panel, max 820 px.
-// The decorative "cinematic strips" live in ChatWindow, NOT here.
+// Responsive:
+//   • mobile  : badges hidden, compact name + buttons
+//   • md+     : badges visible in a horizontal scroll strip
 // ============================================================
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { FC } from "react";
+import resumeData from "../data/resumeData";
 
-// ─── Props ────────────────────────────────────────────────────────────────────────
+// ─── Props ────────────────────────────────────────────────────────────────────
 
 interface ProfileHeroProps {
   name: string;
   title: string;
-  /** URL for the profile photo. Falls back to initials if empty or broken. */
+  /** URL for the profile photo. Falls back to initials if empty/broken. */
   avatarUrl: string;
   location?: string;
-  /** Tech badge labels shown below the name (e.g. "React", "Docker"). */
+  /** Tech badge labels scrolled across the middle of the bar. */
   badges: string[];
-  /** Sends a chat query when the user clicks a CTA chip. */
+  /** Fires a chat message when the user clicks a CTA button. */
   onSend: (text: string) => void;
   isDark: boolean;
 }
 
-// ─── CTA chip config ────────────────────────────────────────────────────────────
-// Each chip is a gradient button at the bottom of the hero card.
-// Clicking one sends `query` as if the user typed it into the chat.
+// ─── Chat CTA chips ───────────────────────────────────────────────────────────
 
-const CTA_CHIPS = [
+const CHAT_CHIPS = [
   {
-    label:    "Show Projects",
-    query:    "Show me your projects",
-    gradient: "from-violet-500 to-purple-600",
-    glow:     "hover:shadow-violet-500/35",
-  },
-  {
-    label:    "View Skills",
-    query:    "What are your skills?",
-    gradient: "from-blue-500 to-cyan-500",
-    glow:     "hover:shadow-blue-400/35",
-  },
-  {
-    label:    "Contact",
-    query:    "How can I contact you?",
-    gradient: "from-emerald-500 to-teal-500",
-    glow:     "hover:shadow-emerald-500/35",
+    label: "Contact",
+    query: "How can I contact you?",
   },
 ] as const;
 
-// ─── Sub-components ─────────────────────────────────────────────────────────────
-
-/** A small rounded pill showing a tech skill name (e.g. "React"). */
-const TechBadge: FC<{ label: string; isDark: boolean }> = ({ label, isDark }) => (
-  <span
-    className={`
-      px-2.5 py-[3px] rounded-full text-[10px] sm:text-[11px] font-medium
-      border transition-colors duration-150
-      ${
-        isDark
-          ? "bg-white/8 text-gray-300 border-white/10 hover:bg-white/12"
-          : "bg-gray-100 text-gray-600 border-gray-200 hover:bg-gray-200"
-      }
-    `}
-  >
-    {label}
-  </span>
-);
-
-/** Small map-pin SVG used next to the location text. */
-const PinIcon: FC = () => (
-  <svg className="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none"
-    stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 1118 0z" />
-    <circle cx="12" cy="10" r="3" />
-  </svg>
-);
-
-// ─── Main component ─────────────────────────────────────────────────────────────
+// ─── Component ────────────────────────────────────────────────────────────────
 
 const ProfileHero: FC<ProfileHeroProps> = ({
   name, title, avatarUrl, location, badges, onSend, isDark,
 }) => {
   const [imgError, setImgError] = useState(false);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
 
-  // Extract the user's initials from their full name ("Mandeep Singh" → "MS")
-  const initials = name.split(" ").map((w) => w[0] ?? "").join("").slice(0, 2).toUpperCase();
+  // Close lightbox on Escape key
+  useEffect(() => {
+    if (!lightboxOpen) return;
+    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") setLightboxOpen(false); };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [lightboxOpen]);
 
-  // Glass background for the content area below the banner.
-  // "backdrop-blur-xl" gives the frosted-glass (glassmorphism) look.
-  const glassBg = isDark
-    ? "bg-[#1e1e30]/90 backdrop-blur-xl"
-    : "bg-white/90  backdrop-blur-xl";
-  const textMain  = isDark ? "text-white"    : "text-gray-900";
-  const textMuted = isDark ? "text-gray-400" : "text-gray-500";
+  // "MS" from "Mandeep Singh" — used when the avatar image is missing.
+  const initials = name
+    .split(" ")
+    .map((w) => w[0] ?? "")
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+
+  // ── Colour tokens ──────────────────────────────────────────────────────────
+  const glassBg   = isDark
+    ? "bg-[#141417] backdrop-blur-2xl"
+    : "bg-white/90 backdrop-blur-2xl";
+  const borderCol = isDark ? "border-white/[0.04]"  : "border-black/[0.06]";
+  const textMain  = isDark ? "text-white"            : "text-gray-900";
+  const textMuted = isDark ? "text-gray-400"         : "text-gray-500";
+  const badgeCls  = isDark
+    ? "bg-white/[0.06] text-gray-300 border-white/[0.09] hover:bg-white/[0.10]"
+    : "bg-gray-100 text-gray-600 border-gray-200 hover:bg-gray-200";
 
   return (
-    // The card itself — pure UI, no cinematic strips here (those live in ChatWindow).
-    <div className="w-full flex flex-col items-center px-3 sm:px-5">
+    <>
+    <div className="relative w-full shrink-0">
 
-      {/* Hero card: ~90% wide, rounded-2xl.  overflow-hidden clips avatar glow. */}
+      {/* ── Glass surface ───────────────────────────────────────────────── */}
+      {/* backdrop-blur-2xl + semi-transparent bg = glassmorphism panel.
+          border-b is the ONLY edge — no side borders → truly flush.
+          shadow gives depth without lifting it off the page.               */}
       <div
         className={`
-          w-full max-w-[820px] rounded-2xl overflow-hidden
-          shadow-2xl shadow-black/30
-          ring-1 ${ isDark ? "ring-white/8" : "ring-black/8" }
+          w-full px-5 sm:px-8 pt-6 pb-5
+          ${glassBg} border-b ${borderCol}
         `}
       >
-        {/* Gradient cover banner
-             The top ~40% of the card. Glassmorphism overlay subtly frosts it.
-             Ambient blobs add depth without looking cartoonish.               */}
-        <div
-          className="
-            relative w-full h-[130px] sm:h-[150px]
-            bg-gradient-to-br from-violet-700 via-purple-600 to-cyan-500
-            overflow-hidden
-          "
-        >
-          {/* Frosted tint layer */}
-          <div className="absolute inset-0 bg-black/15 backdrop-blur-[1px]" />
+        {/* ── Row 1: Avatar · Identity · CTA buttons ──────────────────── */}
+        <div className="flex items-center gap-4 sm:gap-5 w-full min-w-0">
 
-          {/* Ambient light blobs */}
-          <div className="absolute -top-8 -left-8 w-40 h-40 rounded-full bg-violet-400/25 blur-3xl pointer-events-none" />
-          <div className="absolute -bottom-6 right-0 w-52 h-52 rounded-full bg-cyan-400/15 blur-3xl pointer-events-none" />
-          <div className="absolute top-1/3 left-1/2 w-24 h-24 rounded-full bg-purple-300/10 blur-2xl pointer-events-none" />
-
-          {/* Tiny shimmer dots */}
-          <div className="absolute top-4 right-12 w-1.5 h-1.5 rounded-full bg-white/50" />
-          <div className="absolute top-8 right-20 w-1   h-1   rounded-full bg-white/30" />
-          <div className="absolute bottom-6 left-10 w-1  h-1   rounded-full bg-white/40" />
-        </div>
-
-        {/* Content area (glassmorphism surface) */}
-        <div className={`flex flex-col items-center text-center px-5 sm:px-8 pb-7 ${glassBg}`}>
-
-          {/* Avatar - pulled up into the banner with negative margin */}
-          <div className="relative -mt-[48px] mb-3 shrink-0">
-            {/* Blurred glow halo behind the avatar - gradient ring effect */}
-            <div
-              className="
-                absolute -inset-[4px] rounded-full
-                bg-gradient-to-br from-violet-500 via-purple-400 to-cyan-400
-                blur-[6px] opacity-75
-              "
-              aria-hidden="true"
-            />
-            {/* Solid separator ring - colour matches the glass bg so the avatar
-                appears to "float" above the banner. z-10 keeps it above the glow. */}
-            <div
-              className={`
-                relative w-[96px] h-[96px] rounded-full ring-[3px] overflow-hidden z-10
-                ${ isDark ? "ring-[#1e1e30]" : "ring-white" }
-              `}
+          {/* Avatar ─────────────────────────────────────────────── */}
+          <div className="relative shrink-0">
+            <button
+              onClick={() => setLightboxOpen(true)}
+              aria-label="View full photo"
+              className="block w-16 h-16 sm:w-[72px] sm:h-[72px] rounded-full overflow-hidden
+                cursor-zoom-in hover:opacity-90 transition-opacity duration-150 focus:outline-none"
             >
               {!imgError && avatarUrl ? (
                 <img
                   src={avatarUrl}
-                  alt={`${name} profile`}
+                  alt={`${name} profile photo`}
                   className="w-full h-full object-cover"
                   onError={() => setImgError(true)}
                 />
               ) : (
-                // Initials fallback - mirrors the banner gradient
-                <div
-                  className="
-                    w-full h-full flex items-center justify-center select-none
-                    bg-gradient-to-br from-violet-600 to-cyan-500
-                    text-white text-3xl font-bold
-                  "
-                >
+                <div className="w-full h-full flex items-center justify-center
+                  bg-gradient-to-br from-violet-600 to-cyan-500
+                  text-white text-xl font-bold select-none">
                   {initials}
                 </div>
               )}
-            </div>
+            </button>
           </div>
 
-          {/* Name */}
-          <h1 className={`text-xl sm:text-2xl font-bold leading-tight tracking-tight ${textMain}`}>
-            {name}
-          </h1>
+          {/* Name + Title + Location ─────────────────────────────── */}
+          <div className="flex-1 min-w-0">
+            <h1 className={`text-xl sm:text-2xl font-bold leading-tight tracking-tight truncate ${textMain}`}>
+              {name}
+            </h1>
+            <p className={`text-sm mt-1 truncate ${textMuted}`}>{title}</p>
+            {location && (
+              <p className={`text-xs mt-0.5 hidden sm:block ${textMuted} opacity-75`}>{location}</p>
+            )}
+          </div>
 
-          {/* Role */}
-          <p className={`text-sm mt-1 leading-snug ${textMuted}`}>
-            {title}
-          </p>
+          {/* Action buttons ──────────────────────────────────────────────── */}
+          <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
 
-          {/* Location */}
-          {location && (
-            <p className={`flex items-center justify-center gap-1.5 text-[11px] mt-1.5 ${textMuted}`}>
-              <PinIcon />
-              {location}
-            </p>
-          )}
+            {/* Resume download */}
+            <a
+              href={resumeData.resumeUrl ?? "#"}
+              download
+              aria-label="Download resume"
+              className={`
+                flex items-center gap-1.5 px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-lg
+                text-xs sm:text-[13px] font-semibold whitespace-nowrap
+                transition-all duration-150 hover:-translate-y-0.5 active:translate-y-0
+                outline-none focus-visible:ring-2 focus-visible:ring-violet-500
+                ${
+                  isDark
+                    ? "bg-white/[0.08] text-gray-200 hover:bg-white/[0.13] border border-white/[0.09]"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200"
+                }
+              `}
+            >
+              {/* Download icon */}
+              <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 3v13M7 12l5 5 5-5" />
+                <path d="M5 20h14" />
+              </svg>
+              Resume
+            </a>
 
-          {/* Tech badges - max 8, +N overflow badge */}
-          {badges.length > 0 && (
-            <div className="flex flex-wrap justify-center gap-1.5 mt-3.5 max-w-md">
-              {badges.slice(0, 8).map((b) => (
-                <TechBadge key={b} label={b} isDark={isDark} />
-              ))}
-              {badges.length > 8 && (
-                <TechBadge label={`+${badges.length - 8} more`} isDark={isDark} />
-              )}
-            </div>
-          )}
+            {/* GitHub icon link */}
+            <a
+              href={resumeData.contact.github}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="GitHub profile"
+              className={`
+                flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-lg
+                transition-all duration-150 hover:-translate-y-0.5 active:translate-y-0
+                outline-none focus-visible:ring-2 focus-visible:ring-violet-500
+                ${
+                  isDark
+                    ? "bg-white/[0.08] text-gray-300 hover:bg-white/[0.13] border border-white/[0.09]"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200 border border-gray-200"
+                }
+              `}
+            >
+              {/* GitHub logo SVG */}
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483
+                  0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466
+                  -.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832
+                  .092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951
+                  0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65
+                  0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844a9.59 9.59 0 012.504.337
+                  c1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651
+                  .64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943
+                  .359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747
+                  0 .268.18.58.688.482A10.02 10.02 0 0022 12.017C22 6.484 17.522 2 12 2z" />
+              </svg>
+            </a>
 
-          {/* Divider */}
-          <div
-            className={`w-20 h-px my-4 ${ isDark ? "bg-white/10" : "bg-gray-200" }`}
-            aria-hidden="true"
-          />
+            {/* LinkedIn icon link */}
+            <a
+              href={resumeData.contact.linkedin}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="LinkedIn profile"
+              className={`
+                flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-lg
+                transition-all duration-150 hover:-translate-y-0.5 active:translate-y-0
+                outline-none focus-visible:ring-2 focus-visible:ring-violet-500
+                ${
+                  isDark
+                    ? "bg-white/[0.08] text-gray-300 hover:bg-white/[0.13] border border-white/[0.09]"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200 border border-gray-200"
+                }
+              `}
+            >
+              {/* LinkedIn logo SVG */}
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037
+                  -1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046
+                  c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337
+                  7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782
+                  13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0
+                  23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774
+                  23.2 0 22.222 0h.003z" />
+              </svg>
+            </a>
 
-          {/* CTA chips */}
-          <div className="flex flex-wrap justify-center gap-2.5">
-            {CTA_CHIPS.map((chip) => (
+            {/* Divider */}
+            <div className={`w-px h-6 mx-0.5 ${ isDark ? "bg-white/[0.08]" : "bg-gray-200" }`} aria-hidden="true" />
+
+            {/* Chat CTA chips */}
+            {CHAT_CHIPS.map((chip) => (
               <button
                 key={chip.label}
                 onClick={() => onSend(chip.query)}
                 aria-label={chip.query}
                 className={`
-                  px-4 sm:px-5 py-1.5 rounded-full
-                  text-xs sm:text-[13px] font-semibold text-white
-                  bg-gradient-to-r ${chip.gradient}
-                  shadow-md ${chip.glow} hover:shadow-lg
-                  hover:-translate-y-0.5 active:translate-y-0
-                  transition-all duration-150
-                  outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-violet-500
+                  px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-lg
+                  text-xs sm:text-[13px] font-semibold whitespace-nowrap
+                  transition-all duration-150 hover:-translate-y-0.5 active:translate-y-0
+                  outline-none focus-visible:ring-2 focus-visible:ring-violet-500
+                  ${
+                    isDark
+                      ? "bg-white/[0.08] text-gray-200 hover:bg-white/[0.13] border border-white/[0.09]"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200"
+                  }
                 `}
               >
                 {chip.label}
               </button>
             ))}
-          </div>
-        </div>
-      </div>
 
+          </div>
+
+        </div>
+
+        {/* ── Row 2: Tech badge strip ──────────────────────────────────── */}
+        {/* Full-width on all screen sizes — sits below the identity row.    */}
+        {badges.length > 0 && (
+          <div className="flex items-center gap-2 mt-4 overflow-x-auto scrollbar-none">
+            {badges.slice(0, 12).map((badge) => (
+              <span
+                key={badge}
+                className={`
+                  shrink-0 px-3 py-1 rounded-full text-[11px]
+                  font-medium border whitespace-nowrap
+                  transition-colors duration-150 ${badgeCls}
+                `}
+              >
+                {badge}
+              </span>
+            ))}
+          </div>
+        )}
+
+      </div>
     </div>
+
+    {/* ── Lightbox overlay ────────────────────────────────────────────── */}
+    {lightboxOpen && avatarUrl && !imgError && (
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center
+          bg-black/75 backdrop-blur-sm cursor-zoom-out"
+        onClick={() => setLightboxOpen(false)}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Profile photo enlarged"
+      >
+        <img
+          src={avatarUrl}
+          alt={`${name} profile photo`}
+          className="
+            max-w-[80vw] max-h-[80vh] w-auto h-auto
+            rounded-2xl shadow-2xl
+            animate-[scale-in_0.18s_ease-out]
+          "
+          onClick={(e) => e.stopPropagation()}
+        />
+        {/* Close button */}
+        <button
+          onClick={() => setLightboxOpen(false)}
+          aria-label="Close"
+          className="absolute top-5 right-5 w-9 h-9 flex items-center justify-center
+            rounded-full bg-white/10 hover:bg-white/20 text-white
+            transition-colors duration-150"
+        >
+          <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none"
+            stroke="currentColor" strokeWidth={2.2} strokeLinecap="round">
+            <path d="M18 6L6 18M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+    )}
+    </>
   );
 };
 

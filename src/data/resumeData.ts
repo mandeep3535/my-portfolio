@@ -63,7 +63,7 @@ const resumeData: ResumeData = {
   title: "Full-Stack Developer · CS Graduate (UBC)",
 
   contact: {
-    phone: "+1-778-594-5505",
+    phone: "",
     email: "meritmandeep35@gmail.com",
     github: "https://github.com/mandeep3535",
     linkedin: "https://linkedin.com/in/mandeep-singh-3ab425228",

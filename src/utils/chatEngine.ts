@@ -72,8 +72,7 @@ function buildAbout(): string {
   return (
     `**About Me**\n\n` +
     `${about}\n\n` +
-    `📧 ${contact.email}  |  📱 ${contact.phone}\n` +
-    `🔗 [GitHub](${contact.github})  |  [LinkedIn](${contact.linkedin})\n\n` +
+    `📧 ${contact.email}  |   [GitHub](${contact.github})  |  [LinkedIn](${contact.linkedin})\n\n` +
     `**Highlights:**\n` +
     awards.map((a) => `• ${a}`).join("\n")
   );
@@ -139,8 +138,7 @@ function buildContact(): string {
   return (
     `**Let's Connect!**\n\n` +
     `📧 Email: [${contact.email}](mailto:${contact.email})\n` +
-    `📱 Phone: ${contact.phone}\n` +
-    `🔗 GitHub: [${contact.github}](${contact.github})\n` +
+    ` GitHub: [${contact.github}](${contact.github})\n` +
     `💼 LinkedIn: [${contact.linkedin}](${contact.linkedin})\n\n` +
     (resumeData.resumeUrl
       ? `📄 [Download Resume](${resumeData.resumeUrl})`
