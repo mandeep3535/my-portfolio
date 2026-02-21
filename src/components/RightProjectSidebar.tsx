@@ -17,7 +17,7 @@
 //                  the right when the user taps the briefcase icon.
 // ============================================================
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { FC } from "react";
 import type { Project, CompareCategory } from "../data/projects";
 
@@ -43,14 +43,12 @@ interface RightProjectSidebarProps {
 const COMPARE_CHIPS: {
   key: CompareCategory;
   label: string;
-  gradient: string;       // Tailwind gradient (active state)
-  ringColor: string;      // Focus ring colour
 }[] = [
-  { key: "architecture", label: "Architecture", gradient: "from-violet-500 to-purple-600",   ringColor: "ring-violet-500" },
-  { key: "database",     label: "Database",     gradient: "from-blue-500 to-cyan-500",        ringColor: "ring-blue-400"   },
-  { key: "auth",         label: "Auth",         gradient: "from-rose-500 to-pink-500",        ringColor: "ring-rose-400"   },
-  { key: "ui",           label: "UI",           gradient: "from-amber-500 to-orange-500",     ringColor: "ring-amber-400"  },
-  { key: "testing",      label: "Testing",      gradient: "from-emerald-500 to-teal-500",     ringColor: "ring-emerald-400"},
+  { key: "architecture", label: "Architecture" },
+  { key: "database",     label: "Database"     },
+  { key: "auth",         label: "Auth"         },
+  { key: "ui",           label: "UI"           },
+  { key: "testing",      label: "Testing"      },
 ];
 
 // ─── Gradient border wrapper ───────────────────────────────────────────────────
@@ -59,13 +57,13 @@ const COMPARE_CHIPS: {
 // This avoids the limitations of CSS `border-image` with border-radius.
 
 const GradientBorder: FC<{
-  gradient: string;
   children: React.ReactNode;
   className?: string;
   roundedClass?: string;
-}> = ({ gradient, children, className = "", roundedClass = "rounded-xl" }) => (
-  <div className={`p-[1px] bg-gradient-to-br ${gradient} ${roundedClass} ${className}`}>
-    <div className={`${roundedClass} h-full w-full`}>{children}</div>
+  isDark?: boolean;
+}> = ({ children, className = "", roundedClass = "rounded-xl", isDark }) => (
+  <div className={`border ${isDark ? "border-white/[0.08]" : "border-gray-200"} ${roundedClass} ${className}`}>
+    {children}
   </div>
 );
 
@@ -96,25 +94,29 @@ const ActivePreview: FC<{
   compareCategory: CompareCategory;
   isDark: boolean;
 }> = ({ project, compareCategory, isDark }) => {
+  const [showAllStack, setShowAllStack] = useState(false);
+  // Reset when project changes
+  const projectId = project?.id;
+  useEffect(() => { setShowAllStack(false); }, [projectId]);
+
   // Panel background
   const panelBg = isDark ? "bg-[#141417]" : "bg-white";
 
   // ── Empty state — no project selected ───────────────────────────────────
   if (!project) {
     return (
-      <GradientBorder gradient="from-emerald-500 via-teal-500 to-blue-500">
+      <GradientBorder isDark={isDark}>
         <div
           className={`
             flex flex-col items-center justify-center gap-3 py-8 px-4 rounded-xl text-center
             ${panelBg}
           `}
         >
-          {/* Animated pulsing sparkle orb */}
-          <div className="relative">
-            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-500 to-teal-400 animate-pulse opacity-80 blur-sm absolute inset-0" />
-            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-500 to-teal-400 flex items-center justify-center relative z-10">
-              <span className="text-xl">✨</span>
-            </div>
+          {/* Folder icon */}
+          <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isDark ? "bg-white/5" : "bg-gray-100"}`}>
+            <svg className={`w-5 h-5 ${isDark ? "text-gray-500" : "text-gray-400"}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />
+            </svg>
           </div>
           <p className={`text-sm font-semibold ${isDark ? "text-gray-200" : "text-gray-700"}`}>
             Pick a project to preview
@@ -132,7 +134,7 @@ const ActivePreview: FC<{
   const bullets = project.highlights[compareCategory] ?? [];
 
   return (
-    <GradientBorder gradient={chip.gradient} className="transition-all duration-300">
+    <GradientBorder isDark={isDark} className="transition-all duration-300">
       <div className={`rounded-xl p-4 ${panelBg}`}>
 
         {/* Header row: emoji + title */}
@@ -156,11 +158,38 @@ const ActivePreview: FC<{
 
         {/* Stack badges — wrapping pill row */}
         <div className="flex flex-wrap gap-1 mb-3">
-          {project.stack.slice(0, 5).map((tech) => (
+          {(showAllStack ? project.stack : project.stack.slice(0, 5)).map((tech) => (
             <Badge key={tech} label={tech} isDark={isDark} />
           ))}
-          {project.stack.length > 5 && (
-            <Badge label={`+${project.stack.length - 5}`} isDark={isDark} />
+          {!showAllStack && project.stack.length > 5 && (
+            <button
+              onClick={() => setShowAllStack(true)}
+              className={`
+                px-2 py-0.5 rounded-full text-[10px] font-semibold cursor-pointer
+                transition-colors duration-150
+                ${isDark
+                  ? "bg-white/10 text-gray-400 hover:bg-white/20 hover:text-gray-200"
+                  : "bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700"
+                }
+              `}
+            >
+              +{project.stack.length - 5} more
+            </button>
+          )}
+          {showAllStack && (
+            <button
+              onClick={() => setShowAllStack(false)}
+              className={`
+                px-2 py-0.5 rounded-full text-[10px] font-semibold cursor-pointer
+                transition-colors duration-150
+                ${isDark
+                  ? "bg-white/10 text-gray-400 hover:bg-white/20 hover:text-gray-200"
+                  : "bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700"
+                }
+              `}
+            >
+              less
+            </button>
           )}
         </div>
 
@@ -177,7 +206,7 @@ const ActivePreview: FC<{
               flex-1 flex items-center justify-center gap-1.5 py-1.5 px-3
               text-xs font-semibold rounded-lg transition-all duration-150
               ${project.links.demo
-                ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-md hover:shadow-emerald-500/40 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0"
+                ? isDark ? "bg-white/15 border border-white/20 text-white hover:bg-white/20 hover:-translate-y-0.5 active:translate-y-0" : "bg-gray-800 text-white hover:bg-gray-700 hover:-translate-y-0.5 active:translate-y-0"
                 : isDark
                   ? "bg-white/5 text-gray-600 cursor-not-allowed"
                   : "bg-gray-100 text-gray-400 cursor-not-allowed"
@@ -232,7 +261,7 @@ const ActivePreview: FC<{
             </p>
             {bullets.map((b, i) => (
               <div key={i} className="flex gap-1.5">
-                <span className="shrink-0 text-emerald-500 mt-px">•</span>
+                <span className={`shrink-0 mt-px ${isDark ? "text-gray-500" : "text-gray-400"}`}>•</span>
                 <span>{b}</span>
               </div>
             ))}
@@ -255,8 +284,8 @@ const ProjectCard: FC<{
 }> = ({ project, isActive, onSelect, isDark }) => {
   const baseBg  = isDark ? "bg-[#141417]"   : "bg-white";
   const hoverBg = isDark ? "hover:bg-white/5" : "hover:bg-gray-50";
-  const borderActive = isDark ? "border-emerald-500/60" : "border-emerald-500";
-  const borderIdle   = isDark ? "border-white/10"        : "border-gray-200";
+  const borderActive = isDark ? "border-white/25" : "border-gray-400";
+  const borderIdle   = isDark ? "border-white/10" : "border-gray-200";
 
   return (
     <button
@@ -265,18 +294,15 @@ const ProjectCard: FC<{
       className={`
         w-full text-left group flex items-start gap-3 p-3 rounded-xl border
         transition-all duration-200 outline-none
-        focus-visible:ring-2 focus-visible:ring-emerald-500/60
+        focus-visible:ring-2 focus-visible:ring-white/20
         hover:-translate-y-0.5 hover:shadow-md
         ${isActive
-          ? `${baseBg} ${borderActive} shadow-sm shadow-emerald-500/20`
+          ? `${baseBg} ${borderActive} shadow-sm`
           : `${baseBg} ${borderIdle} ${hoverBg} ${isDark ? "hover:border-white/15 hover:shadow-black/30" : "hover:border-gray-300 hover:shadow-gray-200"}`
         }
       `}
     >
-      {/* Emoji icon */}
-      <span className="text-xl leading-none mt-0.5 shrink-0">
-        {project.emoji ?? "⚙️"}
-      </span>
+      {/* Project name only — no emoji */}
 
       {/* Info */}
       <div className="min-w-0 flex-1">
@@ -284,7 +310,7 @@ const ProjectCard: FC<{
           className={`
             text-[12px] font-semibold line-clamp-2 leading-snug
             ${isActive
-              ? "text-emerald-500"
+              ? isDark ? "text-white" : "text-gray-900"
               : isDark ? "text-gray-200 group-hover:text-white" : "text-gray-800 group-hover:text-gray-900"
             }
           `}
@@ -292,20 +318,12 @@ const ProjectCard: FC<{
           {project.title}
         </p>
 
-        {/* Stack badges */}
-        <div className="flex flex-wrap gap-1 mt-1.5">
-          {project.stack.slice(0, 4).map((tech) => (
-            <Badge key={tech} label={tech} isDark={isDark} />
-          ))}
-          {project.stack.length > 4 && (
-            <Badge label={`+${project.stack.length - 4}`} isDark={isDark} />
-          )}
-        </div>
+
       </div>
 
       {/* "Active" badge — only shown when card is selected */}
       {isActive && (
-        <span className="shrink-0 self-start mt-0.5 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/20 text-emerald-500">
+        <span className={`shrink-0 self-start mt-0.5 px-2 py-0.5 rounded-full text-[10px] font-semibold ${isDark ? "bg-white/10 text-gray-400" : "bg-gray-100 text-gray-500"}`}>
           Active
         </span>
       )}
@@ -332,14 +350,7 @@ const CompareChipsRow: FC<{
       Compare projects by
     </p>
 
-    {/*
-      Two-layer scroll pattern:
-        - Outer div: overflow-x-auto (establishes the scroll viewport)
-        - Inner div: w-max pl-3 pr-3 (width = content + padding, so right
-          padding lives INSIDE the scroll area and is never clipped)
-    */}
-    <div className="overflow-x-auto no-scrollbar">
-      <div className="flex gap-1.5 pb-0.5 pl-3 pr-4 w-max">
+    <div className="flex flex-wrap gap-1.5 px-3 pb-1">
         {COMPARE_CHIPS.map((chip) => {
           const isSelected = chip.key === active;
           return (
@@ -350,12 +361,14 @@ const CompareChipsRow: FC<{
               className={`
                 shrink-0 px-3 py-1 rounded-full text-[11px] font-semibold
                 transition-all duration-150 outline-none whitespace-nowrap
-                focus-visible:ring-2 ${chip.ringColor} focus-visible:ring-offset-1
+                focus-visible:ring-2 focus-visible:ring-white/20 focus-visible:ring-offset-1
                 ${isSelected
-                  ? `bg-gradient-to-r ${chip.gradient} text-white shadow-md`
+                  ? isDark
+                    ? "bg-white/15 text-white border border-white/20"
+                    : "bg-gray-800 text-white"
                   : isDark
-                    ? "bg-white/10 text-gray-400 hover:bg-white/15 hover:text-gray-200"
-                    : "bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700"
+                    ? "bg-white/5 text-gray-400 border border-white/[0.07] hover:bg-white/10 hover:text-gray-200"
+                    : "bg-white text-gray-500 border border-gray-200 hover:bg-gray-50 hover:text-gray-700"
                 }
               `}
             >
@@ -363,7 +376,6 @@ const CompareChipsRow: FC<{
             </button>
           );
         })}
-      </div>
     </div>
   </div>
 );
@@ -423,7 +435,7 @@ const RightProjectSidebar: FC<RightProjectSidebarProps> = ({
         >
           <div className="flex items-center gap-2">
             {/* Vibrant indicator dot */}
-            <span className="w-2 h-2 rounded-full bg-gradient-to-br from-emerald-400 to-teal-400 animate-pulse shrink-0" />
+            <span className={`w-2 h-2 rounded-full shrink-0 ${isDark ? "bg-gray-500" : "bg-gray-300"}`} />
             <h2 className={`text-sm font-bold ${isDark ? "text-white" : "text-gray-900"}`}>
               Project Hub
             </h2>
@@ -456,6 +468,13 @@ const RightProjectSidebar: FC<RightProjectSidebarProps> = ({
             />
           </div>
 
+          {/* 2) Compare Chips — below the preview */}
+          <CompareChipsRow
+            active={compareCategory}
+            onChange={setCompareCategory}
+            isDark={isDark}
+          />
+
           {/* Divider label */}
           <div className={`shrink-0 flex items-center gap-2 px-3 py-2`}>
             <span className={`text-[10px] uppercase tracking-wider font-semibold ${isDark ? "text-gray-500" : "text-gray-400"}`}>
@@ -467,7 +486,7 @@ const RightProjectSidebar: FC<RightProjectSidebarProps> = ({
             </span>
           </div>
 
-          {/* 2) Project List — scrollable */}
+          {/* 3) Project List — scrollable */}
           <div className="flex-1 overflow-y-auto px-3 pb-2 space-y-1.5 min-h-0">
             {projects.map((project) => (
               <ProjectCard
@@ -481,12 +500,6 @@ const RightProjectSidebar: FC<RightProjectSidebarProps> = ({
           </div>
         </div>
 
-        {/* 3) Compare Chips — pinned to bottom */}
-        <CompareChipsRow
-          active={compareCategory}
-          onChange={setCompareCategory}
-          isDark={isDark}
-        />
       </aside>
     </>
   );

@@ -72,7 +72,7 @@ function buildAbout(): string {
   return (
     `**About Me**\n\n` +
     `${about}\n\n` +
-    `📧 ${contact.email}  |   [GitHub](${contact.github})  |  [LinkedIn](${contact.linkedin})\n\n` +
+    `${contact.email}  |  [GitHub](${contact.github})  |  [LinkedIn](${contact.linkedin})\n\n` +
     `**Highlights:**\n` +
     awards.map((a) => `• ${a}`).join("\n")
   );
@@ -83,9 +83,9 @@ function buildSkills(): string {
   const { backend, frontend, tools } = resumeData.skills;
   return (
     `**Skills**\n\n` +
-    `**🖥 Back-End**\n${backend.join(" · ")}\n\n` +
-    `**🎨 Front-End**\n${frontend.join(" · ")}\n\n` +
-    `**🛠 Tools & Misc**\n${tools.join(" · ")}`
+    `**Back-End**\n${backend.join(" · ")}\n\n` +
+    `**Front-End**\n${frontend.join(" · ")}\n\n` +
+    `**Tools & Misc**\n${tools.join(" · ")}`
   );
 }
 
@@ -97,8 +97,8 @@ function buildProjects(): string {
       `**${i + 1}. ${p.name}** ${p.highlight ? `_(${p.highlight})_` : ""}\n` +
         `_${p.period}_  |  Tech: ${p.tech.join(", ")}\n` +
         p.bullets.map((b) => `• ${b}`).join("\n") +
-        (p.demo ? `\n🌐 [Live Demo](${p.demo})` : "") +
-        (p.github ? `  🔗 [GitHub](${p.github})` : "")
+        (p.demo ? `\n[Live Demo](${p.demo})` : "") +
+        (p.github ? `  [GitHub](${p.github})` : "")
     );
   });
   return lines.join("\n\n");
@@ -137,12 +137,12 @@ function buildContact(): string {
   const { contact } = resumeData;
   return (
     `**Let's Connect!**\n\n` +
-    `📧 Email: [${contact.email}](mailto:${contact.email})\n` +
+    `Email: [${contact.email}](mailto:${contact.email})\n` +
     ` GitHub: [${contact.github}](${contact.github})\n` +
-    `💼 LinkedIn: [${contact.linkedin}](${contact.linkedin})\n\n` +
+    `LinkedIn: [${contact.linkedin}](${contact.linkedin})\n\n` +
     (resumeData.resumeUrl
-      ? `📄 [Download Resume](${resumeData.resumeUrl})`
-      : `📄 Resume download — _TODO: upload PDF and update resumeUrl in resumeData.ts_`)
+      ? `[Download Resume](${resumeData.resumeUrl})`
+      : `Resume download coming soon.`)
   );
 }
 
@@ -198,8 +198,8 @@ const intentRules: IntentRule[] = [
     handler: () =>
       botMsg(
         resumeData.resumeUrl
-          ? `📄 You can download the resume here: [Download Resume](${resumeData.resumeUrl})`
-          : `📄 The resume PDF isn't hosted yet — _TODO: upload PDF and update resumeUrl in resumeData.ts_.\n\nIn the meantime, feel free to ask me anything about Mandeep's background!`,
+          ? `You can download the resume here: [Download Resume](${resumeData.resumeUrl})`
+          : `The resume PDF isn't hosted yet.\n\nIn the meantime, feel free to ask me anything about Mandeep's background!`,
         ["About Mandeep", "Show projects", "Contact"]
       ),
   },
@@ -209,7 +209,7 @@ const intentRules: IntentRule[] = [
     handler: () =>
       botMsg(
         `**Honours & Awards**\n\n` +
-          resumeData.awards.map((a) => `🏅 ${a}`).join("\n"),
+          resumeData.awards.map((a) => `• ${a}`).join("\n"),
         ["About Mandeep", "Education", "Show projects"]
       ),
   },
@@ -233,8 +233,8 @@ function handleCommand(input: string): ChatMessage | null {
     "/resume":     () =>
       botMsg(
         resumeData.resumeUrl
-          ? `📄 [Download Resume](${resumeData.resumeUrl})`
-          : `📄 Resume URL not set yet — update \`resumeData.resumeUrl\` in resumeData.ts.`,
+          ? `[Download Resume](${resumeData.resumeUrl})`
+          : `Resume URL not set yet.`,
         ["About Mandeep", "Contact"]
       ),
     "/help": () =>

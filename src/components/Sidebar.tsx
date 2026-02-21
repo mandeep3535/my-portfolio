@@ -31,12 +31,12 @@ interface SidebarProps {
 // Navigation sections — each maps to a chat query string.
 // When clicked, the query is sent to ChatWindow via pendingQuery.
 const NAV_SECTIONS = [
-  { label: "About",      icon: "👤", query: "About Mandeep" },
-  { label: "Projects",   icon: "🚀", query: "Show projects" },
-  { label: "Skills",     icon: "⚡", query: "What's your stack?" },
-  { label: "Experience", icon: "💼", query: "Work experience" },
-  { label: "Education",  icon: "🎓", query: "Education" },
-  { label: "Contact",    icon: "📬", query: "Contact info" },
+  { label: "About",      query: "About Mandeep" },
+  { label: "Projects",   query: "Show projects" },
+  { label: "Skills",     query: "What's your stack?" },
+  { label: "Experience", query: "Work experience" },
+  { label: "Education",  query: "Education" },
+  { label: "Contact",    query: "Contact info" },
 ];
 
 const Sidebar: FC<SidebarProps> = ({
@@ -115,7 +115,7 @@ const Sidebar: FC<SidebarProps> = ({
             Portfolio
           </p>
 
-          {NAV_SECTIONS.map(({ label, icon, query }) => (
+          {NAV_SECTIONS.map(({ label, query }) => (
             <button
               key={label}
               onClick={() => { onSectionClick(query); onClose(); }}
@@ -124,14 +124,13 @@ const Sidebar: FC<SidebarProps> = ({
                 transition-colors duration-150 ${textMain} ${hoverBg} text-left
               `}
             >
-              <span className="text-base leading-none">{icon}</span>
               {label}
             </button>
           ))}
 
           {/* ── Command hint ─────────────────────────────────────────────── */}
           <div className={`mt-4 mx-1 px-3 py-3 rounded-lg text-xs ${textMuted} ${isDark ? "bg-white/5" : "bg-gray-100"}`}>
-            <p className="font-semibold mb-1">⌨ Slash commands</p>
+            <p className="font-semibold mb-1">Slash commands</p>
             <p className="opacity-80 leading-5">
               /about · /projects · /skills<br />
               /experience · /education<br />

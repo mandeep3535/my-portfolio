@@ -138,7 +138,7 @@ const ProfileHero: FC<ProfileHeroProps> = ({
             {/* Resume download */}
             <a
               href={resumeData.resumeUrl ?? "#"}
-              download
+              download="Mandeep_Resume.pdf"
               aria-label="Download resume"
               className={`
                 flex items-center gap-1.5 px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-lg

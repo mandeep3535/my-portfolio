@@ -190,12 +190,47 @@ const ChatWindow: FC<ChatWindowProps> = ({
 
         {/* Empty state — shown when there are no messages yet */}
         {!hasMessages && (
-          <div className="flex flex-col items-center justify-center h-full gap-3 px-6 pb-16 select-none">
-            <div className={`text-[13px] font-medium ${isDark ? "text-gray-500" : "text-gray-400"}`}>
-              Ask me anything about Mandeep
+          <div className="flex flex-col items-center justify-center h-full gap-6 px-6 pb-16 select-none">
+
+            {/* Icon */}
+            <div className="relative">
+              <div className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg" style={{ background: AVATAR_GRADIENT }}>
+                <svg className="w-7 h-7 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                </svg>
+              </div>
+              {/* Subtle pulse ring */}
+              <div className="absolute inset-0 rounded-2xl animate-ping" style={{ background: AVATAR_GRADIENT, opacity: 0.25, animationDuration: "2.5s" }} />
             </div>
-            <div className={`text-[11px] ${isDark ? "text-gray-600" : "text-gray-300"}`}>
-              projects · skills · experience · contact
+
+            {/* Heading + subtitle */}
+            <div className="text-center space-y-1.5">
+              <p className={`text-base font-semibold ${isDark ? "text-gray-200" : "text-gray-800"}`}>
+                Ask me anything about Mandeep
+              </p>
+              <p className={`text-[12px] ${isDark ? "text-gray-500" : "text-gray-400"}`}>
+                Get answers about his background, projects, skills, and more.
+              </p>
+            </div>
+
+            {/* Quick-start chips */}
+            <div className="flex flex-wrap justify-center gap-2 max-w-sm">
+              {["About Mandeep", "Show projects", "View skills", "Work experience", "Education", "Contact"].map((label) => (
+                <button
+                  key={label}
+                  onClick={() => sendMessage(label)}
+                  className={`
+                    px-3.5 py-1.5 rounded-full text-[12px] font-medium border
+                    transition-all duration-150 hover:-translate-y-0.5 active:translate-y-0
+                    ${isDark
+                      ? "border-white/10 bg-white/5 text-gray-300 hover:bg-white/10 hover:border-white/20 hover:text-white"
+                      : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-900 shadow-sm"
+                    }
+                  `}
+                >
+                  {label}
+                </button>
+              ))}
             </div>
           </div>
         )}

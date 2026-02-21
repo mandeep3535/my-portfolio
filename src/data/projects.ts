@@ -28,7 +28,7 @@ export type Project = {
 const projects: Project[] = [
   {
     id: "ta-allocation",
-    emoji: "🎓",
+    emoji: "",
     title: "TA Allocation & Management System",
     description: "5-microservice Spring Boot + React platform that automates TA assignment for UBC.",
     stack: ["React", "TypeScript", "Spring Boot", "MySQL", "Docker", "Tailwind CSS", "Prometheus", "Grafana"],
@@ -42,7 +42,7 @@ const projects: Project[] = [
         "Docker Compose orchestrates all services for one-command startup",
         "FullCalendar integrated for real-time availability scheduling",
         "Prometheus scrapers + Grafana dashboards for live observability",
-        "Ranked UBC's 🏆 1st Choice Project for functionality & performance",
+        "Ranked UBC's 1st Choice Project for functionality & performance",
       ],
       database: [
         "MySQL relational schema: users, courses, availability_slots, allocations",
@@ -77,7 +77,7 @@ const projects: Project[] = [
 
   {
     id: "ecommerce",
-    emoji: "🛒",
+    emoji: "",
     title: "E-Commerce Electronics Web App",
     description: "Full-stack LAMP e-commerce site with cart, checkout, and admin order management.",
     stack: ["HTML", "CSS", "JavaScript", "Bootstrap", "PHP", "MySQL"],
@@ -125,8 +125,57 @@ const projects: Project[] = [
   },
 
   {
+    id: "portfolio",
+    emoji: "",
+    title: "Personal Portfolio Website",
+    description: "This very site — a chat-style React portfolio with project explorer, dark mode, and rule-based Q&A.",
+    stack: ["React", "TypeScript", "Vite", "Tailwind CSS", "Docker", "ESLint"],
+    links: {
+      demo:   "https://mandeep3535.github.io/my-portfolio",   // TODO: update with actual live URL
+      github: "https://github.com/mandeep3535/my-portfolio",
+    },
+    highlights: {
+      architecture: [
+        "3-column SPA: Sidebar | Chat Panel | Project Explorer",
+        "Vite 7 bundler with HMR for instant dev feedback",
+        "Dockerised dev environment — single `docker-compose up` to run",
+        "Type-safe resumeData.ts as single source of truth for all content",
+        "Component-driven design: each UI zone is an isolated React FC",
+      ],
+      database: [
+        "No server DB — all data lives in resumeData.ts and projects.ts",
+        "Static JSON-style data structures typed with TypeScript interfaces",
+        "Projects stored as a typed array with highlights per compare lens",
+        "Resume content (skills, experience, education) fully typed and tree-shaken",
+        "Easy to extend: add a project object and the UI updates automatically",
+      ],
+      auth: [
+        "No auth required — public portfolio, fully open access",
+        "GitHub Pages / static host deployment (no backend needed)",
+        "Docker image runs only the Vite dev server — no sensitive secrets",
+        "Environment-safe: no API keys embedded in client bundle",
+        "Future: could add a contact form backed by a serverless function",
+      ],
+      ui: [
+        "Dark / light theme toggle with smooth Tailwind class transitions",
+        "Chat-style interaction powered by a rule-based chatEngine.ts",
+        "Avatar lightbox — click to enlarge with scale-in animation + Escape key",
+        "Prompt chips for quick questions; markdown-rendered responses",
+        "Fully responsive: sidebar collapses to icon rail on small screens",
+      ],
+      testing: [
+        "ESLint + TypeScript strict mode catches errors at author time",
+        "Vite build step validates all imports and types before deploy",
+        "Manual cross-browser QA: Chrome, Firefox, Safari, Edge",
+        "Docker build tested on both Windows (host) and Linux (container)",
+        "Component isolation: each FC is self-contained for easy unit testing",
+      ],
+    },
+  },
+
+  {
     id: "student-reg",
-    emoji: "📋",
+    emoji: "",
     title: "Student Registration System",
     description: "Java desktop app using JDBC + MySQL for student enrolment and academic records.",
     stack: ["Java", "MySQL", "JDBC", "NetBeans", "Swing"],

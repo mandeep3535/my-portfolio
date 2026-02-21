@@ -139,7 +139,7 @@ const resumeData: ResumeData = {
         "Containerised all services with Docker; added observability via Prometheus + Grafana.",
         "Ranked UBC's 1st Choice Project for functionality, performance, and usability.",
       ],
-      highlight: "🏆 UBC 1st Choice Project",
+      highlight: "UBC 1st Choice Project",
     },
     {
       name: "E-Commerce Electronics Web App",
@@ -202,7 +202,7 @@ const resumeData: ResumeData = {
   ],
 
   // TODO: Upload resume PDF and replace null with the public URL
-  resumeUrl: null,
+  resumeUrl: "/Mandeep_Resume.pdf",
 };
 
 export default resumeData;
