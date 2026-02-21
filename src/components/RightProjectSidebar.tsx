@@ -44,6 +44,7 @@ const COMPARE_CHIPS: {
   key: CompareCategory;
   label: string;
 }[] = [
+  { key: "details",      label: "Overview"     },
   { key: "architecture", label: "Architecture" },
   { key: "database",     label: "Database"     },
   { key: "auth",         label: "Auth"         },
@@ -150,7 +151,7 @@ const ActivePreview: FC<{
             >
               {project.title}
             </h2>
-            <p className={`text-[11px] mt-0.5 line-clamp-1 ${isDark ? "text-gray-400" : "text-gray-500"}`}>
+            <p className={`text-[11px] mt-0.5 ${compareCategory === "details" ? "" : "line-clamp-1"} ${isDark ? "text-gray-400" : "text-gray-500"}`}>
               {project.description}
             </p>
           </div>
@@ -257,7 +258,7 @@ const ActivePreview: FC<{
             `}
           >
             <p className={`font-semibold text-[10px] uppercase tracking-wider mb-1.5 ${isDark ? "text-gray-400" : "text-gray-500"}`}>
-              {chip.label} highlights
+              {chip.key === "details" ? "Project Overview" : `${chip.label} highlights`}
             </p>
             {bullets.map((b, i) => (
               <div key={i} className="flex gap-1.5">
@@ -347,7 +348,7 @@ const CompareChipsRow: FC<{
     `}
   >
     <p className={`px-3 text-[10px] uppercase tracking-wider font-semibold mb-2 ${isDark ? "text-gray-500" : "text-gray-400"}`}>
-      Compare projects by
+      Detailed Information
     </p>
 
     <div className="flex flex-wrap gap-1.5 px-3 pb-1">
@@ -391,7 +392,7 @@ const RightProjectSidebar: FC<RightProjectSidebarProps> = ({
   onClose,
 }) => {
   // Which compare lens the user has chosen (local to this sidebar)
-  const [compareCategory, setCompareCategory] = useState<CompareCategory>("architecture");
+  const [compareCategory, setCompareCategory] = useState<CompareCategory>("details");
 
   const activeProject = projects.find((p) => p.id === activeProjectId);
 

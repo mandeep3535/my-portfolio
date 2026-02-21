@@ -5,8 +5,8 @@
 // Update `links.demo` and `links.github` once you have real URLs.
 // ============================================================
 
-/** The five lens categories shown in the Quick Compare Chips. */
-export type CompareCategory = "architecture" | "database" | "auth" | "ui" | "testing";
+/** The six lens categories shown in the Quick Compare Chips. */
+export type CompareCategory = "architecture" | "database" | "auth" | "ui" | "testing" | "details";
 
 export type Project = {
   id: string;
@@ -56,7 +56,7 @@ const projects: Project[] = [
         "Three roles: Admin, Instructor, TA — each sees a filtered dashboard",
         "Token verified at API Gateway; downstream services trust the header",
         "Refresh-token rotation with 15-min access / 7-day refresh window",
-        "Passwords hashed with BCrypt (cost factor 12)",
+        "Passwords hashed with SHA-256",
       ],
       ui: [
         "React + TypeScript SPA with Tailwind CSS design system",
@@ -71,6 +71,13 @@ const projects: Project[] = [
         "Integration tests spin up an H2 in-memory DB for CI runs",
         "Manual end-to-end QA across all three role flows",
         "Docker Healthcheck probes confirm service readiness before tests",
+      ],
+      details: [
+        "5-microservice Spring Boot + React platform automating the TA application, sorting, and assignment process for UBC courses",
+        "Ranked UBC's 1st Choice Project for functionality & performance",
+        "Replaces manual spreadsheet processes with real-time availability scheduling via FullCalendar",
+        "Deployed via Docker Compose — single command startup for all 5 services",
+        "Live Prometheus + Grafana observability dashboards monitor system health in real time",
       ],
     },
   },
@@ -121,6 +128,13 @@ const projects: Project[] = [
         "Load tested with concurrent carts to validate transaction safety",
         "Form validation unit-tested in JavaScript",
       ],
+      details: [
+        "Full-stack LAMP site (Linux, Apache, MySQL, PHP) for an electronics retail store",
+        "Complete shopping cart, secure checkout flow, and admin order management dashboard",
+        "Live at mvelectronics.online — deployed and running on a production server",
+        "AJAX-powered cart and stock updates with no full page reloads",
+        "Page load optimised ~30% through query tuning and frontend asset improvements",
+      ],
     },
   },
 
@@ -170,6 +184,13 @@ const projects: Project[] = [
         "Docker build tested on both Windows (host) and Linux (container)",
         "Component isolation: each FC is self-contained for easy unit testing",
       ],
+      details: [
+        "This very site — a React + TypeScript SPA styled as an interactive chat portfolio",
+        "3-column layout: navigation sidebar, chat panel, and a project explorer (you're in it now)",
+        "Rule-based chatbot answers questions about skills, projects, experience, and education",
+        "Dark / light theme, prompt chips, markdown-rendered responses, and avatar lightbox",
+        "Dockerised dev environment and deployed to GitHub Pages",
+      ],
     },
   },
 
@@ -180,8 +201,8 @@ const projects: Project[] = [
     description: "Java desktop app using JDBC + MySQL for student enrolment and academic records.",
     stack: ["Java", "MySQL", "JDBC", "NetBeans", "Swing"],
     links: {
-      demo:   undefined,                             // TODO: no live demo (desktop app)
-      github: "https://github.com/mandeep3535",      // TODO: replace with specific repo
+      demo:   "https://www.youtube.com/watch?v=bx2WPYazKZo",                        
+      github: "https://github.com/mandeep3535",      
     },
     highlights: {
       architecture: [
@@ -201,9 +222,9 @@ const projects: Project[] = [
       auth: [
         "Basic admin login backed by a users table in MySQL",         // Resume doesn't detail auth here
         "Passwords stored as SHA-256 hashes (baseline implementation)",
-        "Single-admin role — multi-role support is a TODO",
+        "Two user roles: Admin and Student ",
         "Session state managed in-memory for the duration of the app run",
-        "TODO: Upgrade to BCrypt and add student self-service login",
+        "Sha256 chosen for simplicity in an project context",
       ],
       ui: [
         "Java Swing GUI with tabbed panes: Register, Search, Update, Delete",
@@ -213,11 +234,19 @@ const projects: Project[] = [
         "Keyboard-navigable forms (Tab order explicitly set)",
       ],
       testing: [
-        "JUnit 4 unit tests for DAO layer: create, read, update, delete",
-        "Edge cases tested: duplicate enrollment, invalid student ID",
-        "Manual smoke-test checklist run before each demo submission",
-        "DB rollback tested after failed batch inserts",
-        "TODO: Add Mockito mocks to isolate DAO tests from live DB",
+        "JUnit 4 tests with @Before/@After lifecycle hooks for setup and DB cleanup after each run",
+        "Java Reflection used to access and inject private Swing fields and invoke private action handlers",
+        "Button action simulation: addCourseButton and goBackButton events fired programmatically",
+        "Duplicate course code constraint validated against live MySQL — asserts false on collision",
+        "Placeholder text and foreground colour verified for all input fields",
+        "Transaction rollback tested — failed inserts cleanly roll back without leaving dirty data",
+      ],
+      details: [
+        "Java Swing desktop application for managing student enrolment and academic records",
+        "Full CRUD interface across four screens: Register, Search, Update, and Delete",
+        "JDBC + MySQL with a dedicated DAO layer separating SQL from business logic",
+        "Real-time input validation and a sortable JTable for query result display",
+        "Academic project demonstrating Java OOP, Swing UI design, and relational DB skills",
       ],
     },
   },
