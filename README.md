@@ -41,6 +41,18 @@ Choose **one** of the methods below.
 npm install
 ```
 
+---
+
+## OpenAI / ChatGPT Integration
+
+This project can optionally query the OpenAI Chat Completions API for free-form replies when the rule-based engine has no match.
+
+- Create a `.env` at the project root (don't commit it) and set `VITE_OPENAI_KEY`.
+- Example: copy `.env.example` → `.env` and fill your key.
+
+WARNING: placing an API key in the frontend exposes it to end users. For production, use a server-side proxy to keep the key secret.
+
+
 **2. Start the development server**
 
 ```bash

@@ -19,6 +19,7 @@
 // ============================================================
 
 import resumeData from "../data/resumeData";
+import { queryChatGPT } from "./openaiClient";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -281,6 +282,44 @@ export function processMessage(input: string): ChatMessage {
     `I'm not sure I have that info, but here's what I can share about ${resumeData.name}:`,
     ["About Mandeep", "Show projects", "View skills", "Work experience", "Contact"]
   );
+}
+
+/**
+ * Async variant used by the UI when integrating ChatGPT.
+ * Falls back to the rule-based engine first; when nothing matches
+ * it queries the OpenAI chat completions endpoint and returns
+ * the assistant reply as a ChatMessage.
+ */
+export async function processMessageAsync(input: string): Promise<ChatMessage> {
+  const trimmed = input.trim();
+  if (!trimmed) return botMsg("Please type something and I'll do my best to help!");
+
+  // Slash commands still handled synchronously
+  if (trimmed.startsWith("/")) {
+    const cmdResult = handleCommand(trimmed);
+    if (cmdResult) return cmdResult;
+    return botMsg(
+      `Unknown command **${trimmed}**. Try /help to see available commands.`,
+      ["/about", "/projects", "/skills", "/contact"]
+    );
+  }
+
+  // Intent matching (rule-based)
+  for (const rule of intentRules) {
+    if (contains(trimmed, rule.keywords)) return rule.handler();
+  }
+
+  // No rule matched — call OpenAI
+  try {
+    const aiReply = await queryChatGPT(trimmed);
+    return botMsg(aiReply);
+  } catch (err: any) {
+    console.error("OpenAI query failed:", err);
+    return botMsg(
+      `Sorry — I couldn't reach the AI service. ${resumeData.name} info is still available above.`,
+      ["About Mandeep", "Show projects", "View skills"]
+    );
+  }
 }
 
 // NOTE: `getWelcomeMessage()` and `defaultChips` were previously exported

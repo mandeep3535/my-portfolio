@@ -85,7 +85,7 @@ const MessageBubble: FC<MessageBubbleProps> = ({
 
   if (isUser) {
     // ── User message ───────────────────────────────────────────────────
-    // Green rounded pill, max 70% of the column width, pushed to the right.
+    // Green rounded pill, narrower on desktop but roomy on phones.
     // The outer `w-full` wrapper ensures the bg covers edge-to-edge.
     return (
       <div className="w-full py-2">
@@ -93,7 +93,7 @@ const MessageBubble: FC<MessageBubbleProps> = ({
           <div className="flex justify-end">
             <div
               className={`
-                max-w-[70%] px-4 py-2.5
+                max-w-[90%] sm:max-w-[70%] px-4 py-2.5
                 rounded-2xl rounded-tr-sm text-sm leading-relaxed
                 ${isDark ? "bg-emerald-600 text-white" : "bg-emerald-500 text-white"}
               `}
@@ -128,7 +128,7 @@ const MessageBubble: FC<MessageBubbleProps> = ({
               Portfolio Assistant
             </p>
             {/* Rendered Markdown content — converted by utils/markdown.tsx */}
-            <div className={`text-sm leading-7 space-y-0.5 ${isDark ? "text-gray-200" : "text-gray-700"}`}>
+            <div className={`text-sm leading-6 sm:leading-7 space-y-0.5 break-words whitespace-pre-wrap ${isDark ? "text-gray-200" : "text-gray-700"}`}>
               {renderMarkdown(displayed, isDark)}
               {/* Blinking cursor that shows while text is still streaming */}
               {!streamDone && (

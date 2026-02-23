@@ -89,19 +89,19 @@ const ProfileHero: FC<ProfileHeroProps> = ({
           shadow gives depth without lifting it off the page.               */}
       <div
         className={`
-          w-full px-5 sm:px-8 pt-6 pb-5
+          w-full px-4 sm:px-8 pt-3 sm:pt-6 pb-3 sm:pb-5
           ${glassBg} border-b ${borderCol}
         `}
       >
         {/* ── Row 1: Avatar · Identity · CTA buttons ──────────────────── */}
-        <div className="flex items-center gap-4 sm:gap-5 w-full min-w-0">
+        <div className="flex items-start gap-4 sm:gap-5 w-full min-w-0">
 
           {/* Avatar ─────────────────────────────────────────────── */}
-          <div className="relative shrink-0">
+          <div className="relative shrink-0 mt-1">
             <button
               onClick={() => setLightboxOpen(true)}
               aria-label="View full photo"
-              className="block w-16 h-16 sm:w-[72px] sm:h-[72px] rounded-full overflow-hidden
+              className="block w-12 h-12 sm:w-16 sm:h-16 rounded-full overflow-hidden
                 cursor-zoom-in hover:opacity-90 transition-opacity duration-150 focus:outline-none"
             >
               {!imgError && avatarUrl ? (
@@ -121,37 +121,37 @@ const ProfileHero: FC<ProfileHeroProps> = ({
             </button>
           </div>
 
-          {/* Name + Title + Location ─────────────────────────────── */}
-          <div className="flex-1 min-w-0">
-            <h1 className={`text-xl sm:text-2xl font-bold leading-tight tracking-tight truncate ${textMain}`}>
-              {name}
-            </h1>
-            <p className={`text-sm mt-1 truncate ${textMuted}`}>{title}</p>
-            {location && (
-              <p className={`text-xs mt-0.5 hidden sm:block ${textMuted} opacity-75`}>{location}</p>
-            )}
-          </div>
+          {/* Identity + actions container — stacks on mobile, row on sm+ */}
+          <div className="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h1 className={`text-lg sm:text-2xl font-bold leading-tight tracking-tight ${textMain}`}>
+                {name}
+              </h1>
+              <p className={`text-sm mt-1 ${textMuted}`}>{title}</p>
+              {location && (
+                <p className={`text-xs mt-0.5 hidden sm:block ${textMuted} opacity-75`}>{location}</p>
+              )}
+            </div>
 
-          {/* Action buttons ──────────────────────────────────────────────── */}
-          <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
-
-            {/* Resume download */}
-            <a
-              href={resumeData.resumeUrl ?? "#"}
-              download="Mandeep_Resume.pdf"
-              aria-label="Download resume"
-              className={`
-                flex items-center gap-1.5 px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-lg
-                text-xs sm:text-[13px] font-semibold whitespace-nowrap
-                transition-all duration-150 hover:-translate-y-0.5 active:translate-y-0
-                outline-none focus-visible:ring-2 focus-visible:ring-violet-500
-                ${
-                  isDark
-                    ? "bg-white/[0.08] text-gray-200 hover:bg-white/[0.13] border border-white/[0.09]"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200"
-                }
-              `}
-            >
+            {/* Action buttons — placed under the name on mobile */}
+            <div className="mt-3 sm:mt-0 flex items-center gap-2 shrink-0 flex-wrap justify-end">
+              {/* Resume download */}
+              <a
+                href={resumeData.resumeUrl ?? "#"}
+                download="Mandeep_Resume.pdf"
+                aria-label="Download resume"
+                className={`
+                  flex items-center gap-1.5 px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-lg
+                  text-xs sm:text-[13px] font-semibold whitespace-nowrap
+                  transition-all duration-150 hover:-translate-y-0.5 active:translate-y-0
+                  outline-none focus-visible:ring-2 focus-visible:ring-violet-500
+                  ${
+                    isDark
+                      ? "bg-white/[0.08] text-gray-200 hover:bg-white/[0.13] border border-white/[0.09]"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200"
+                  }
+                `}
+              >
               {/* Download icon */}
               <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none"
                 stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
@@ -222,31 +222,32 @@ const ProfileHero: FC<ProfileHeroProps> = ({
               </svg>
             </a>
 
-            {/* Divider */}
-            <div className={`w-px h-6 mx-0.5 ${ isDark ? "bg-white/[0.08]" : "bg-gray-200" }`} aria-hidden="true" />
+              {/* Divider */}
+              <div className={`w-px h-6 mx-0.5 ${ isDark ? "bg-white/[0.08]" : "bg-gray-200" }`} aria-hidden="true" />
 
-            {/* Chat CTA chips */}
-            {CHAT_CHIPS.map((chip) => (
-              <button
-                key={chip.label}
-                onClick={() => onSend(chip.query)}
-                aria-label={chip.query}
-                className={`
-                  px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-lg
-                  text-xs sm:text-[13px] font-semibold whitespace-nowrap
-                  transition-all duration-150 hover:-translate-y-0.5 active:translate-y-0
-                  outline-none focus-visible:ring-2 focus-visible:ring-violet-500
-                  ${
-                    isDark
-                      ? "bg-white/[0.08] text-gray-200 hover:bg-white/[0.13] border border-white/[0.09]"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200"
-                  }
-                `}
-              >
-                {chip.label}
-              </button>
-            ))}
+              {/* Chat CTA chips */}
+              {CHAT_CHIPS.map((chip) => (
+                <button
+                  key={chip.label}
+                  onClick={() => onSend(chip.query)}
+                  aria-label={chip.query}
+                  className={`
+                    px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-lg
+                    text-xs sm:text-[13px] font-semibold whitespace-nowrap
+                    transition-all duration-150 hover:-translate-y-0.5 active:translate-y-0
+                    outline-none focus-visible:ring-2 focus-visible:ring-violet-500
+                    ${
+                      isDark
+                        ? "bg-white/[0.08] text-gray-200 hover:bg-white/[0.13] border border-white/[0.09]"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200"
+                    }
+                  `}
+                >
+                  {chip.label}
+                </button>
+              ))}
 
+            </div>
           </div>
 
         </div>
@@ -254,7 +255,7 @@ const ProfileHero: FC<ProfileHeroProps> = ({
         {/* ── Row 2: Tech badge strip ──────────────────────────────────── */}
         {/* Full-width on all screen sizes — sits below the identity row.    */}
         {badges.length > 0 && (
-          <div className="flex items-center gap-2 mt-4 overflow-x-auto scrollbar-none">
+          <div className="hidden sm:flex items-center gap-2 mt-3 overflow-x-auto scrollbar-none">
             {badges.slice(0, 12).map((badge) => (
               <span
                 key={badge}

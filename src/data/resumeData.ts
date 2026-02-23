@@ -130,8 +130,8 @@ const resumeData: ResumeData = {
       name: "TA Allocation & Management System (UBC)",
       period: "May – Aug 2025",
       tech: ["React", "TypeScript", "Spring Boot", "Tailwind CSS", "MySQL", "Docker", "Prometheus", "Grafana"],
-      github: "https://github.com/mandeep3535", // TODO: replace with specific repo URL
-      demo: null,
+      github: "https://github.com/mandeep3535", 
+      demo: "https://www.youtube.com/watch?v=bx2WPYazKZo",
       bullets: [
         "Built a 5-microservice full-stack platform using Spring Boot REST APIs + React to automate TA allocation, reducing manual workload by ~95%.",
         "Implemented role-based access control and dynamic availability scheduling via FullCalendar.",
@@ -145,7 +145,7 @@ const resumeData: ResumeData = {
       name: "E-Commerce Electronics Web App",
       period: "Jan – Apr 2025",
       tech: ["HTML", "CSS", "JavaScript", "Bootstrap", "MySQL", "PHP"],
-      github: "https://github.com/mandeep3535", // TODO: replace with specific repo URL
+      github: "https://github.com/mandeep3535", 
       demo: "https://mvelectronics.online",
       bullets: [
         "Built a full-stack e-commerce platform with product catalogue, cart, checkout, and admin order management.",
@@ -159,8 +159,8 @@ const resumeData: ResumeData = {
       name: "Student Registration System",
       period: "Sept – Dec 2024",
       tech: ["Java", "MySQL", "JDBC", "NetBeans"],
-      github: "https://github.com/mandeep3535", // TODO: replace with specific repo URL
-      demo: null,
+      github: "https://github.com/mandeep3535",
+      demo: "https://github.com/mandeep3535",
       bullets: [
         "Built a Java-based student registration system using JDBC with MySQL for enrollment and academic record management.",
         "Implemented complete CRUD workflows with real-time input validation.",
@@ -201,7 +201,6 @@ const resumeData: ResumeData = {
     { subject: "Image Processing", grade: "A+" },
   ],
 
-  // TODO: Upload resume PDF and replace null with the public URL
   resumeUrl: "/Mandeep_Resume.pdf",
 };
 

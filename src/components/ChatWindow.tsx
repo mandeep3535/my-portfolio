@@ -23,7 +23,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import type { FC, KeyboardEvent, ChangeEvent } from "react";
 import type { ChatMessage } from "../utils/chatEngine";
-import { processMessage } from "../utils/chatEngine";
+import { processMessage, processMessageAsync } from "../utils/chatEngine";
 import MessageBubble from "./MessageBubble";
 import PromptChips from "./PromptChips";
 import ProfileHero from "./ProfileHero";
@@ -112,11 +112,18 @@ const ChatWindow: FC<ChatWindowProps> = ({
       setInputValue("");
       setIsTyping(true);
 
-      setTimeout(() => {
-        const reply = processMessage(trimmed);
-        setMessages((prev) => [...prev, reply]);
-        setIsTyping(false);
-        setStreamingId(reply.id); // begin typewriter animation
+      setTimeout(async () => {
+        try {
+          const reply = await processMessageAsync(trimmed);
+          setMessages((prev) => [...prev, reply]);
+          setStreamingId(reply.id); // begin typewriter animation
+        } catch (err) {
+          // fallback to synchronous engine if async fails
+          const reply = processMessage(trimmed);
+          setMessages((prev) => [...prev, reply]);
+        } finally {
+          setIsTyping(false);
+        }
       }, TYPING_DELAY_MS);
     },
     [isTyping]
@@ -179,7 +186,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
         name={resumeData.name}
         title={resumeData.title}
         avatarUrl={avatarImg}
-        location="Kelowna, BC · Open to remote"
+        location="Canada"
         badges={HERO_BADGES}
         onSend={sendMessage}
         isDark={isDark}
