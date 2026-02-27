@@ -17,7 +17,7 @@
 //                  the right when the user taps the briefcase icon.
 // ============================================================
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import type { FC } from "react";
 import ActivePreview from "./projects/ActivePreview";
 import ProjectCard from "./projects/ProjectCard";
