@@ -33,7 +33,7 @@ const projects: Project[] = [
     description: "5-microservice Spring Boot + React platform that automates TA assignment for UBC.",
     stack: ["React", "TypeScript", "Spring Boot", "MySQL", "Docker", "Tailwind CSS", "Prometheus", "Grafana"],
     links: {
-      demo:   undefined,                             // TODO: add demo URL
+      demo:   "https://www.youtube.com/watch?v=bx2WPYazKZo",
       github: "https://github.com/mandeep3535",      // TODO: replace with specific repo
     },
     highlights: {
