@@ -17,6 +17,7 @@
 // ============================================================
 
 import { useState, useEffect, useCallback } from "react";
+import { Analytics } from "@vercel/analytics/react";
 import Sidebar from "./components/Sidebar";
 import ChatWindow from "./components/ChatWindow";
 import RightProjectSidebar from "./components/RightProjectSidebar";
@@ -171,6 +172,9 @@ function App() {
         isOpen={rightOpen}
         onClose={() => setRightOpen(false)}
       />
+      
+      {/* ── Vercel Web Analytics ────────────────────────────────────────── */}
+      <Analytics />
     </div>
   );
 }
